@@ -1,0 +1,1 @@
+[Environment]::SetEnvironmentVariable("WSL_DISTRO", $null, "User")

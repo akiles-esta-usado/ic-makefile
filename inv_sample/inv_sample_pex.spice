@@ -1,0 +1,22 @@
+* NGSPICE file created from inv_sample_pex.ext - technology: gf180mcuD
+
+.subckt inv_sample_pex vdd vss out in
+X0 vdd.t1 in.t0 out.t0 vdd.t0 pfet_03v3 ad=0.819p pd=3.82u as=0.819p ps=3.82u w=1.26u l=0.28u
+X1 vss.t1 in.t1 out.t1 vss.t0 nfet_03v3 ad=0.2646p pd=2.1u as=0.2646p ps=2.1u w=0.42u l=0.28u
+R0 in.n0 in.t0 40.306
+R1 in.n0 in.t1 26.3664
+R2 in in.n0 8.005
+R3 out out.t1 12.5752
+R4 out out.t0 5.3412
+R5 vdd vdd.t0 494.974
+R6 vdd vdd.t1 4.97125
+R7 vss vss.t0 1675.46
+R8 vss vss.t1 12.3704
+C0 out vdd 0.104467f
+C1 out in 0.073482f
+C2 vdd in 0.216879f
+C3 out vss 0.235092f
+C4 in vss 0.557358f
+C5 vdd vss 1.24442f
+.ends
+

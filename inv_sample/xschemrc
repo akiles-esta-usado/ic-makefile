@@ -1,0 +1,34 @@
+source $env(PDK_ROOT)/gf180mcuD/libs.tech/xschem/xschemrc
+
+set script_path [ file dirname [ file normalize [ info script ] ] ]
+
+foreach ldo_directory [ glob -nocomplain -type d * ] {
+
+    set ldo_files {}
+
+    append ldo_files [ glob -nocomplain ./$ldo_directory/*.sch ]
+    append ldo_files [ glob -nocomplain ./$ldo_directory/*.sym ]
+
+    if { [ llength $ldo_files ] > 0 } {
+        append XSCHEM_LIBRARY_PATH :$script_path/$ldo_directory
+    }
+}
+
+set XSCHEM_START_WINDOW {0_top.sch}
+
+
+proc create_empty_sch { filename } {
+    puts "Hola $filename"
+    xschem clear force
+    xschem saveas $filename schematic
+    exit
+}
+
+proc get_variables { } {
+    puts "current_dirname:  [ xschem get current_dirname ]" 
+    puts "current_name:     [ xschem get current_name ]" 
+    puts "current_win_path: [ xschem get current_win_path ]" 
+    puts "netlist_name:     [ xschem get netlist_name ]" 
+    puts "netlist_type:     [ xschem get netlist_type ]" 
+    puts "version:          [ xschem get version ]" 
+}

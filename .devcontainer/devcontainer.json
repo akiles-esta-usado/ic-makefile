@@ -1,0 +1,42 @@
+// More info: https://containers.dev/implementors/json_reference/
+{
+	"name": "chipathon-devcontainer",
+	"image": "git.1159.cl/mario1159/chipathon-tools-desktop:latest",
+	"features": {},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"ms-toolsai.jupyter",
+				"ms-python.black-formatter"
+			],
+			"settings": {
+				"[python]": {
+					"editor.defaultFormatter": "ms-python.black-formatter",
+					"editor.formatOnSave": true
+				}
+			}
+		}
+	},
+	"mounts": [
+		{
+			"source": "\\\\wsl.localhost\\${localEnv:WSL_DISTRO}\\tmp\\.X11-unix",
+			"target": "/tmp/.X11-unix",
+			"type": "bind"
+		},
+		{
+			"source": "\\\\wsl.localhost\\${localEnv:WSL_DISTRO}\\tmp\\wslg",
+			"target": "/mnt/wslg",
+			"type": "bind"
+		}
+	],
+	"containerEnv": {
+		"DISPLAY": ":0",
+		"XDG_RUNTIME_DIR": "/mnt/wslg/runtime-dir",
+		"WAYLAND_DISPLAY": "wayland-0",
+		"PULSE_SERVER": "unix:/mnt/wslg/PulseServer",
+		"PDK": "gf180mcuD"
+	},
+	"initializeCommand": "powershell -noprofile -nologo -ExecutionPolicy Bypass .devcontainer\\set-wsl-distro.ps1"
+}
