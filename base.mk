@@ -34,6 +34,11 @@ COLOR_CYAN:=$(shell tput setaf 6)
 COLOR_WHITE:=$(shell tput setaf 7)
 COLOR_END:=$(shell tput sgr0 )
 
+TERM_BOLD:=$(shell tput bold)
+TERM_SMUL:=$(shell tput smul)
+TERM_RMUL:=$(shell tput rmul)
+TERM_TAB:=$(shell printf "\t")
+
 define ERROR_MESSAGE =
 	$(error $(COLOR_RED)$(1)$(COLOR_END))
 endef
@@ -46,6 +51,10 @@ define INFO_MESSAGE =
 	$(info $(COLOR_CYAN)$(1)$(COLOR_END))
 endef
 
+define INFO2_MESSAGE =
+	$(info $(COLOR_GREEN)$(1)$(COLOR_END))
+endef
+
 test-colors:
 	@echo -e "$(COLOR_BLACK) hola_0 $(COLOR_END)"
 	@echo -e "$(COLOR_RED) hola_1 $(COLOR_END)"
@@ -55,3 +64,15 @@ test-colors:
 	@echo -e "$(COLOR_MAGENTA) hola_5 $(COLOR_END)"
 	@echo -e "$(COLOR_CYAN) hola_6 $(COLOR_END)"
 	@echo -e "$(COLOR_WHITE) hola_7 $(COLOR_END)"
+
+
+clean:
+	$(RM) $(CLEANABLE)
+
+full-clean:
+	$(RM) $(FULL_CLEANABLE)
+
+# https://www.cmcrossroads.com/article/printing-value-makefile-variable
+# https://stackoverflow.com/questions/16467718/how-to-print-out-a-variable-in-makefile
+#print_% : ; $(info $*: $(flavor $*) variable - $($*)) @true
+print_% : ; $(call INFO_MESSAGE,$*:$(TERM_TAB)$(TERM_SMUL)$(flavor $*)$(TERM_RMUL)$(TERM_TAB)$($*)) @true

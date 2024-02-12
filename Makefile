@@ -13,134 +13,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This is a REFERENCE FILE
-# You have to create a specific one for your project
+# This is a REFERENCE FILE used to create a specific one per project.
 
-all: print-vars
+all: print_vars
 _IC_MAKEFILE=.
 include $(_IC_MAKEFILE)/base.mk
 
-# User parameters
-#################
+
+# User controlable variables
+
+TOP=UNDEFINED
+TEST=UNDEFINED
+
+MODULES= \
+	$(realpath ./samples/inv_sample) \
+	$(realpath ./samples/buffer_sample)
+
+# Tool configuration files
 
 PDK=gf180mcuD
-
-# TOP Indicates the top module, from a list of modules
-TOP=UNDEFINED
-
-TIMESTAMP_DAY=$(shell date +%Y-%m-%d)
-TIMESTAMP_TIME=$(shell date +%H-%M-%S)
-
-# TOP is a directory that contains relevant files that share the same name.
-# - TOP/TOP.sch
-# - TOP/TOP.sym
-# - TOP/TOP-test.sch
-# - TOP/TOP.gds
-
-# Getting Files
-###############
-
-## 1. Get all files ##
-
-ALL_MODULES= \
-	$(realpath ./inv_sample)
-
-ALL_FILES:= \
-	$(wildcard ./inv_sample/*)
-
-## 2. Filter by type #
-
-ALL_SCH:=$(filter %.sch,$(ALL_FILES))
-
-ALL_GDS:=$(filter %.gds,$(ALL_FILES))
-
-ALL_NETLIST:= \
-	$(filter %.spice,$(ALL_FILES)) \
-	$(filter %.cdl,$(ALL_FILES)) \
-	$(filter %.cir,$(ALL_FILES))
-
-
-## 3. Filter by subtype ##
-
-# Schematics
-SCH:=$(filter-out %-test.sch,$(ALL_SCH))
-ALL_SYM:=$(filter %.sym,$(ALL_FILES))
-
-# Testbenches
-TB:=$(filter %-test.sch,$(ALL_SCH))
-
-# Parasitix extraction (pex)
-PEX:=$(filter %.pex,$(ALL_FILES))
-
-# Layout (gds)
-GDS:=$(filter %.gds,$(ALL_GDS))
-
-# Garbage
-CLEANABLE:= \
-	$(filter %.log,$(ALL_FILES)) \
-	$(filter %comp.out,$(ALL_FILES)) \
-	$(filter %.ext,$(ALL_FILES)) \
-	$(filter %.sim,$(ALL_FILES)) \
-	$(filter %.nodes,$(ALL_FILES)) \
-	$(filter %.drc,$(ALL_FILES))
-# $(filter %.lyrdb,$(ALL_FILES))
-# $(filter %.lvsdb,$(ALL_FILES))
-
-## 3. Files related with the TOP
-
-ifeq (,$(TOP))
-# TOP is undefined
-
-# NEVER define TOP in this section. Empty TOP is useful as an indicator
-$(warning $(COLOR_YELLOW)TOP not defined, using default values$(COLOR_END))
-TOP_SCH=0_top.sch
-
-else # ifeq (,$(TOP))
-
-# TOP is defined
-TOP_SCH:=$(realpath $(filter %/$(TOP).sch,$(SCH)))
-TOP_TB:=$(realpath $(filter %/$(TOP)-test.sch,$(TB)))
-TOP_SYM:=$(realpath $(filter %/$(TOP).sym,$(ALL_SYM)))
-
-TOP_GDS:=$(realpath $(filter %/$(TOP).gds,$(GDS)))
-TOP_GDS_CELL:=$(basename $(notdir $(TOP_GDS)))
-
-TOP_GDS_DIR:=$(abspath $(dir $(TOP_GDS)))
-TOP_SCH_DIR:=$(abspath $(dir $(TOP_SCH)))
-
-GDS_REPORT_DIR:=$(TOP_GDS_DIR)/reports
-ifeq (,$(GDS_REPORT_DIR))
-mkdir -p $(GDS_REPORT_DIR)
-endif
-
-# Extracted from schematics (xschem)
-TOP_NETLIST_SCH:=$(realpath $(filter %/$(TOP).spice,$(ALL_NETLIST)))
-TOP_NETLIST_LVS_NOPREFIX:=$(TOP_SCH_DIR)/$(TOP)_noprefix.spice
-TOP_NETLIST_LVS_PREFIX:=$(TOP_SCH_DIR)/$(TOP)_prefix.spice
-
-# Extracted from layout
-# (klayout)
-TOP_EXTRACTED_KLAYOUT:=$(realpath $(filter %/$(TOP).cir,$(wildcard $(TOP_GDS_DIR)/*)))
-# (magic)
-TOP_EXTRACTED_MAGIC:=$(realpath $(filter %/$(TOP)_extracted.spice,$(wildcard $(TOP_GDS_DIR)/*)))
-TOP_EXTRACTED_PEX:=$(realpath $(filter %/$(TOP)_pex.spice,$(wildcard $(TOP_GDS_DIR)/*)))
-
-endif # ifeq (,$(TOP))
-
-# Relevant directories
-##################
-
-LOG_DIR=$(abspath logs)/$(TIMESTAMP_DAY)
-ifeq (,$(wildcard $(LOG_DIR)))
-$(shell mkdir -p $(LOG_DIR))
-endif
-
-XSCHEM_RCFILE=$(realpath ./xschemrc)
-MAGIC_RCFILE=$(realpath ./magicrc)
+XSCHEM_RCFILE=$(realpath ./samples/xschemrc)
+MAGIC_RCFILE=$(realpath ./samples/magicrc)
 NETGEN_RCFILE=$(realpath $(PDK_ROOT)/$(PDK)/libs.tech/netgen/setup.tcl)
 
-# Rules
-#######
+
+
+define PARAMETER_ENTRY =
+
+Makefile variables:
+  TOP: Indicates the top module, from a list of modules
+  TEST: Each TOP could have multiple tests
+
+  ex: make TOP=inv_sample TEST=test_2
+
+endef
+
 
 define HELP_ENTRIES =
 Help message for Makefile
@@ -152,7 +59,7 @@ Help message for Makefile
 
     $$ make TOP=resistor klayout-drc
     $$ make TOP=ldo-top xschem
-	$$ make TOP=ldo-top print-TOP_GDS_DIR
+	$$ make TOP=ldo-top print-GDS_DIR
 
   clean:          Removes intermediate files.
   print-%:        For every variable, prints it's value
@@ -165,6 +72,100 @@ Help message for Makefile
 
 endef
 
+## Files related with the TOP
+
+ifeq (UNDEFINED,$(TOP))
+
+$(call WARNING_MESSAGE,TOP not defined. Using default values)
+SCH=0_top.sch
+
+else # ifeq (UNDEFINED,$(TOP))
+
+MODULE_DIR=$(filter %/$(TOP),$(MODULES))
+
+# TODO: This is going to fail when trying to create a new module :(
+ifeq (,$(MODULE_DIR))
+$(call ERROR_MESSAGE,Module "$(TOP)" don't exists or is not registered)
+else
+$(call INFO_MESSAGE,Module "$(TOP)" in directory $(MODULE_DIR))
+endif
+
+# Base files
+
+SCH:=$(wildcard $(MODULE_DIR)/symbol/$(TOP).sch)
+SYM:=$(wildcard $(MODULE_DIR)/symbol/$(TOP).sym)
+GDS:=$(wildcard $(MODULE_DIR)/layout/$(TOP).gds)
+TBS:=$(wildcard $(MODULE_DIR)/test/*.sch)
+ifeq (UNDEFINED,$(TEST))
+TB:=$(word 1,$(TBS))
+else
+TB:=$(filter %/$(TEST).sch,$(TBS))
+endif
+
+GDS_CELL:=$(basename $(notdir $(GDS)))
+
+# Directories related with the module
+# Decouple the directory from the file allows having different project structures
+
+GDS_DIR:=$(realpath $(dir $(GDS)))
+SCH_DIR:=$(realpath $(dir $(SCH)))
+OUTPUT_DIR:=$(abspath $(MODULE_DIR)/output)
+
+REPORT_DIR:=$(abspath $(OUTPUT_DIR)/reports)
+EXTRACTION_DIR:=$(abspath $(OUTPUT_DIR)/extraction)
+TB_DIR:=$(abspath $(EXTRACTION_DIR)/test)
+
+$(shell mkdir -p $(OUTPUT_DIR))
+$(shell mkdir -p $(REPORT_DIR))
+$(shell mkdir -p $(EXTRACTION_DIR)/schematic)
+$(shell mkdir -p $(EXTRACTION_DIR)/layout_clean)
+$(shell mkdir -p $(EXTRACTION_DIR)/layout_pex)
+$(shell mkdir -p $(TB_DIR))
+
+
+# Schematic test netlist
+
+TB_NETLIST_PREFIX:=$(EXTRACTION_DIR)/schematic/$(TOP)_prefix.spice
+
+# Schematic clean netlist
+
+SCH_NETLIST_PREFIX:=$(EXTRACTION_DIR)/schematic/$(TOP)_prefix.spice
+SCH_NETLIST_NOPREFIX:=$(EXTRACTION_DIR)/schematic/$(TOP)_noprefix.spice
+
+# Layout clean netlist
+
+LAYOUT_NETLIST_KLAYOUT:=$(EXTRACTION_DIR)/layout_clean/$(TOP).cir
+LAYOUT_NETLIST_MAGIC:=$(EXTRACTION_DIR)/layout_clean/$(TOP)_extracted.spice
+
+# Layout netlists with parasitics
+
+LAYOUT_NETLIST_PEX:=$(EXTRACTION_DIR)/layout_pex/$(TOP)_pex.spice
+
+endif # ifeq (UNDEFINED,$(TOP))
+
+CLEANABLE:= \
+	$(foreach module,$(MODULES),$(wildcard $(module)/output/reports/drc_run_*.log)) \
+	$(foreach module,$(MODULES),$(wildcard $(module)/output/reports/*.drc)) \
+	$(foreach module,$(MODULES),$(wildcard $(module)/layout/*.ext)) \
+	$(foreach module,$(MODULES),$(wildcard $(module)/layout/*.sim)) \
+	$(foreach module,$(MODULES),$(wildcard $(module)/layout/*.nodes))
+
+FULL_CLEANABLE:= $(CLEANABLE) \
+	$(foreach module,$(MODULES),$(wildcard $(module)/output/reports/*.lyrdb)) \
+	$(foreach module,$(MODULES),$(wildcard $(module)/output/reports/*.lvsdb)) \
+	$(foreach module,$(MODULES),$(wildcard $(module)/output/reports/*comp.out))
+
+# Logs
+######
+
+TIMESTAMP_DAY=$(shell date +%Y_%m_%d)
+TIMESTAMP_TIME=$(shell date +%H_%M_%S)
+
+LOG_DIR=$(abspath ./logs/$(TIMESTAMP_DAY))
+ifeq (,$(wildcard $(LOG_DIR)))
+$(shell mkdir -p $(LOG_DIR))
+endif
+
 
 include $(_IC_MAKEFILE)/xschem.mk
 include $(_IC_MAKEFILE)/klayout.mk
@@ -173,33 +174,32 @@ include $(_IC_MAKEFILE)/netgen.mk
 include $(_IC_MAKEFILE)/ngspice.mk
 include $(_IC_MAKEFILE)/extra_be_checks.mk
 
+# Some variables are created on included makefiles
+MAKE=make TOP=$(TOP) TEST=$(TEST) GND_NAME=$(GND_NAME)
+
 
 .PHONY: help
 help:
-	$(call INFO_MESSAGE, $(HELP_ENTRIES))
+	$(call INFO_MESSAGE,$(HELP_ENTRIES))
+	$(call INFO2_MESSAGE,$(PARAMETER_ENTRY))
 
-
-.PHONY: clean
-clean:
-	$(RM) $(CLEANABLE)
-
-
-# https://www.cmcrossroads.com/article/printing-value-makefile-variable
-# https://stackoverflow.com/questions/16467718/how-to-print-out-a-variable-in-makefile
-print-% : ; $(info $*: $(flavor $*) variable - $($*)) @true
-
-
-.PHONY: print-vars
-print-vars : \
-	print-TOP \
-	print-TOP_SCH \
-	print-TOP_TB \
-	print-TOP_SYM \
-	print-TOP_GDS \
-	print-TOP_GDS_CELL \
- 	print-TOP_NETLIST_SCH \
-	print-TOP_NETLIST_GDS \
-	print-TOP_NETLIST_PEX
+.PHONY: print_vars
+print_vars : \
+	print_MAKE \
+	print_TOP \
+	print_MODULE_DIR \
+	print_SCH \
+	print_SYM \
+	print_TB \
+	print_GDS \
+	print_GDS_CELL \
+	print_TBS \
+	print_SCH_NETLIST \
+	print_SCH_NETLIST_NOPREFIX \
+	print_SCH_NETLIST_PREFIX \
+ 	print_LAYOUT_NETLIST_KLAYOUT \
+	print_LAYOUT_NETLIST_MAGIC \
+	print_LAYOUT_NETLIST_PEX
 
 
 .PHONY: xschem
@@ -219,49 +219,45 @@ create-module:
 ifeq (,$(TOP))
 	$(call ERROR_MESSAGE, TOP not defined, couldn't create any design)
 endif
-	mkdir -p $(TOP)
-ifneq (,$(wildcard $(TOP)/$(TOP).sch))
+	mkdir -p $(TOP)/symbol
+	mkdir -p $(TOP)/layout
+	mkdir -p $(TOP)/test
+
+ifneq (,$(wildcard $(TOP)/schematic/$(TOP).sch))
 	$(call WARNING_MESSAGE, schematic already exists)
 else
 	xschem --rcfile $(XSCHEM_RCFILE) \
 	--no_x \
 	--quit \
-	--command "xschem clear; xschem saveas $(TOP)/$(TOP).sch"
+	--command "xschem clear; xschem saveas $(TOP)/symbol/$(TOP).sch"
 endif
 
-ifneq (,$(wildcard $(TOP)/$(TOP)-test.sch))
-	$(call WARNING_MESSAGE, schematic testbench already exists)
-else
-	xschem --rcfile $(XSCHEM_RCFILE) \
-	--no_x \
-	--quit \
-	--command "xschem clear; xschem saveas $(TOP)/$(TOP)-test.sch"
-endif
-
-ifneq (,$(wildcard $(TOP)/$(TOP).gds))
+ifneq (,$(wildcard $(TOP)/layout/$(TOP).gds))
 	$(call WARNING_MESSAGE, layout already exists)
 else
-	klayout -t -e -zz -r $(_IC_MAKEFILE)/empty-gds.py -rd filepath=$(TOP)/$(TOP).gds
+	klayout -t -e -zz -r $(_IC_MAKEFILE)/empty-gds.py -rd filepath=$(TOP)/layout/$(TOP).gds
 endif
 
 
 .PHONY: extensive-test
 extensive-test:
-	make TOP=$(TOP) klayout-drc-only     |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_extensive_test_$(TOP).log
-	make TOP=$(TOP) GND_NAME=$(GND_NAME) klayout-lvs-only \
-	                                     |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_extensive_test_$(TOP).log
-	make TOP=$(TOP) netgen-lvs-klayout   |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_extensive_test_$(TOP).log
-	make TOP=$(TOP) netgen-lvs-magic     |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_extensive_test_$(TOP).log
-	make TOP=$(TOP) magic-pex-extraction |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_extensive_test_$(TOP).log
+	$(MAKE) klayout-drc-only     |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_extensive_test_$(TOP).log
+	$(MAKE) klayout-lvs-only     |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_extensive_test_$(TOP).log
+	$(MAKE) netgen-lvs-klayout   |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_extensive_test_$(TOP).log
+	$(MAKE) netgen-lvs-magic     |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_extensive_test_$(TOP).log
+	$(MAKE) magic-pex-extraction |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_extensive_test_$(TOP).log
+
 
 .PHONY: drc
 drc:
-	$(MAKE) TOP=$(TOP) klayout-drc
+	$(MAKE) klayout-drc
+
 
 lvs:
-	$(MAKE) TOP=$(TOP) GND_NAME=$(GND_NAME) klayout-lvs-only  |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_lvs_$(TOP).log
-	$(MAKE) TOP=$(TOP) netgen-lvs-magic                       |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_lvs_$(TOP).log
-	$(MAKE) TOP=$(TOP) netgen-lvs-klayout                     |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_lvs_$(TOP).log
+	$(MAKE) klayout-lvs-only   |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_lvs_$(TOP).log
+	$(MAKE) netgen-lvs-magic   |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_lvs_$(TOP).log
+	$(MAKE) netgen-lvs-klayout |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_lvs_$(TOP).log
+
 
 pex:
-	$(MAKE) TOP=$(TOP) magic-pex-extraction
+	$(MAKE) magic-pex-extraction

@@ -16,12 +16,10 @@
 # Files, directories and Aliases
 ################################
 
-XSCHEM_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_xschem_$(TOP).log
-XSCHEM_NETLIST_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_xschem_netlist_$(TOP).log
-XSCHEM_NETLIST_PREFIX_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_xschem_netlist_prefix_$(TOP).log
-XSCHEM_NETLIST_NOPREFIX_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_xschem_netlist_noprefix_$(TOP).log
-
-TOP_SCH_DIR:=$(abspath $(dir $(TOP_SCH)))
+LOG_XSCHEM=$(LOG_DIR)/$(TIMESTAMP_TIME)_xschem_$(TOP).log
+LOG_XSCHEM_NETLIST=$(LOG_DIR)/$(TIMESTAMP_TIME)_xschem_netlist_$(TOP).log
+LOG_XSCHEM_NETLIST_PREFIX=$(LOG_DIR)/$(TIMESTAMP_TIME)_xschem_netlist_prefix_$(TOP).log
+LOG_XSCHEM_NETLIST_NOPREFIX=$(LOG_DIR)/$(TIMESTAMP_TIME)_xschem_netlist_noprefix_$(TOP).log
 
 # https://xschem.sourceforge.io/stefan/xschem_man/developer_info.html
 #--preinit 'set lvs_netlist 1; set spiceprefix 0'
@@ -29,10 +27,7 @@ ifeq (,$(XSCHEM_BINARY))
 XSCHEM_BINARY=xschem
 endif
 
-XSCHEM=$(XSCHEM_BINARY) --rcfile $(XSCHEM_RCFILE) \
-	--netlist \
-	--netlist_path $(dir $(TOP_SCH)) \
-	--netlist_filename $(TOP).spice
+XSCHEM=$(XSCHEM_BINARY) --rcfile $(XSCHEM_RCFILE)
 
 XSCHEM_BATCH=$(XSCHEM) \
 	--no_x \
@@ -54,14 +49,13 @@ Xschem related rules:
                                 This functions is applied by noprefix rule
 
   Required variables:
-    TOP_SCH:                  Schematic
-    TOP_TB:                   Testbench
-    TOP_SYM:                  Symbol
-    TOP_SCH_DIR:              Directory for schematic related information
-    TOP_NETLIST_SCH:          Netlist extracted with xschem. Used by spice simulator
-    TOP_NETLIST_LVS_PREFIX:   Schematic extraction with prefix. Required in lvs with magic extraction
-    TOP_NETLIST_LVS_NOPREFIX: Schematic extraction without prefix. Required by klayout
-    XSCHEM_RCFILE:            Configuration file for xschem
+    SCH:                  Schematic
+    TB:                   Testbench
+    SYM:                  Symbol
+    SCH_DIR:              Directory for schematic related information
+    SCH_NETLIST_PREFIX:   Schematic extraction with prefix. Required in lvs with magic extraction
+    SCH_NETLIST_NOPREFIX: Schematic extraction without prefix. Required by klayout
+    XSCHEM_RCFILE:        Configuration file for xschem
 
 endef
 
@@ -70,48 +64,46 @@ endef
 
 .PHONY: xschem-validation
 xschem-validation:
-ifeq (,$(TOP_SCH))
+ifeq (,$(SCH))
 	$(call ERROR_MESSAGE, [xschem] There's no schematic for $(TOP))
 endif
 
 	$(call INFO_MESSAGE, [xschem] rcfile:               $(XSCHEM_RCFILE))
-	$(call INFO_MESSAGE, [xschem] directory:            $(TOP_SCH_DIR))
-	$(call INFO_MESSAGE, [xschem] schematic:            $(TOP_SCH))
+	$(call INFO_MESSAGE, [xschem] directory:            $(SCH_DIR))
+	$(call INFO_MESSAGE, [xschem] schematic:            $(SCH))
 
-ifeq (,$(TOP_TB))
+ifeq (,$(TB))
 	$(call WARNING_MESSAGE, [xschem] There's no testbench for $(TOP))
 else
-	$(call INFO_MESSAGE, [xschem] testbench:            $(TOP_TB))
+	$(call INFO_MESSAGE, [xschem] testbench:            $(TB))
 endif
 
-	$(call INFO_MESSAGE, [xschem] netlist:              $(TOP_NETLIST_SCH))
-	$(call INFO_MESSAGE, [xschem] netlist lvs noprefix: $(TOP_NETLIST_LVS_NOPREFIX))
-	$(call INFO_MESSAGE, [xschem] netlist lvs prefix:   $(TOP_NETLIST_LVS_PREFIX))
+	$(call INFO_MESSAGE, [xschem] netlist lvs prefix:   $(wildcard $(SCH_NETLIST_PREFIX)))
+	$(call INFO_MESSAGE, [xschem] netlist lvs noprefix: $(wildcard $(SCH_NETLIST_NOPREFIX)))
 
 
 .PHONY: xschem-sch
 xschem-sch: xschem-validation
 ifeq (,$(TOP))
-	$(XSCHEM) 0_top.sch |& tee $(XSCHEM_LOG)
+	$(XSCHEM) 0_top.sch |& tee $(LOG_XSCHEM)
 else
-	$(XSCHEM) $(TOP_SCH) |& tee $(XSCHEM_LOG)
+	$(XSCHEM) --netlist_path $(SCH_DIR) $(SCH) |& tee $(LOG_XSCHEM)
 endif
 
 
 .PHONY: xschem-tb
 xschem-tb: xschem-validation
-	$(XSCHEM) $(TOP_TB) |& tee $(XSCHEM_LOG)
+	$(XSCHEM) --netlist_path $(TB_DIR) $(TB) |& tee $(LOG_XSCHEM)
 
 
 .PHONY: xschem-sym
 xschem-sym: xschem-validation
-	$(XSCHEM) $(TOP_SYM) |& tee $(XSCHEM_LOG)
+	$(XSCHEM) --netlist_path $(SCH_DIR) $(SYM) |& tee $(LOG_XSCHEM)
 
 
-.PHONY: xschem-netlist
-xschem-netlist: xschem-validation
-	$(XSCHEM_BATCH) \
-		$(TOP_SCH) |& tee $(XSCHEM_NETLIST_LOG)
+.PHONY: xschem-test-netlist
+xschem-test-netlist: xschem-validation
+	$(XSCHEM_BATCH) --netlist_path $(TB_DIR) $(TB) |& tee $(LOG_XSCHEM_NETLIST)
 
 
 # Used in Magic
@@ -119,8 +111,8 @@ xschem-netlist: xschem-validation
 xschem-netlist-lvs-prefix: xschem-validation
 	$(XSCHEM_BATCH) \
 		--preinit 'set lvs_netlist 1' \
-		--netlist_filename $(TOP_NETLIST_LVS_PREFIX) \
-		$(TOP_SCH) |& tee $(XSCHEM_NETLIST_PREFIX_LOG)
+		--netlist_filename $(SCH_NETLIST_PREFIX) \
+		$(SCH) |& tee $(LOG_XSCHEM_NETLIST_PREFIX)
 
 
 # Used in Klayout
@@ -128,13 +120,13 @@ xschem-netlist-lvs-prefix: xschem-validation
 xschem-netlist-lvs-noprefix: xschem-validation
 	$(XSCHEM_BATCH) \
 		--preinit 'set lvs_netlist 1; set spiceprefix 0' \
-		--netlist_filename $(TOP_NETLIST_LVS_NOPREFIX) \
-		$(TOP_SCH) |& tee $(XSCHEM_NETLIST_NOPREFIX_LOG)
+		--netlist_filename $(SCH_NETLIST_NOPREFIX) \
+		$(SCH) |& tee $(LOG_XSCHEM_NETLIST_NOPREFIX)
 
 
 .PHONY: xschem-netlist-lvs-noprefix-fixed
 xschem-netlist-lvs-noprefix-fixed: xschem-validation xschem-netlist-lvs-noprefix
-	sed -i '/C.*cap_mim_2f0_m4m5_noshield/s/c_width/W/' $(TOP_NETLIST_LVS_NOPREFIX)
-	sed -i '/C.*cap_mim_2f0_m4m5_noshield/s/c_length/L/' $(TOP_NETLIST_LVS_NOPREFIX)
-	sed -i '/R.*ppoly/s/r_width/W/' $(TOP_NETLIST_LVS_NOPREFIX)
-	sed -i '/R.*ppoly/s/r_length/L/' $(TOP_NETLIST_LVS_NOPREFIX)
+	sed -i '/C.*cap_mim_2f0_m4m5_noshield/s/c_width/W/' $(SCH_NETLIST_NOPREFIX)
+	sed -i '/C.*cap_mim_2f0_m4m5_noshield/s/c_length/L/' $(SCH_NETLIST_NOPREFIX)
+	sed -i '/R.*ppoly/s/r_width/W/' $(SCH_NETLIST_NOPREFIX)
+	sed -i '/R.*ppoly/s/r_length/L/' $(SCH_NETLIST_NOPREFIX)

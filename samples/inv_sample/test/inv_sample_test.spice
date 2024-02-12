@@ -1,4 +1,4 @@
-** sch_path: /workspaces/DC23-LTC2-LDO/LDO/xschem/test/inv_sample/inv_sample-test.sch
+** sch_path: /workspaces/DC23-LTC2-LDO/LDO/xschem/test/inv_sample/inv_sample_test.sch
 
 .include /home/designer/.volare/gf180mcuD/libs.tech/ngspice/design.ngspice
 .lib /home/designer/.volare/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
