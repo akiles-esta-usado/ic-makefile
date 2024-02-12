@@ -35,6 +35,7 @@ PDK=gf180mcuD
 XSCHEM_RCFILE=$(realpath ./samples/xschemrc)
 MAGIC_RCFILE=$(realpath ./samples/magicrc)
 NETGEN_RCFILE=$(realpath $(PDK_ROOT)/$(PDK)/libs.tech/netgen/setup.tcl)
+NGSPICE_RCDIR=$(realpath ./samples)
 
 
 
@@ -108,11 +109,12 @@ GDS_CELL:=$(basename $(notdir $(GDS)))
 # Decouple the directory from the file allows having different project structures
 
 GDS_DIR:=$(realpath $(dir $(GDS)))
-SCH_DIR:=$(realpath $(dir $(SCH)))
 OUTPUT_DIR:=$(abspath $(MODULE_DIR)/output)
 
 REPORT_DIR:=$(abspath $(OUTPUT_DIR)/reports)
 EXTRACTION_DIR:=$(abspath $(OUTPUT_DIR)/extraction)
+
+SCH_DIR:=$(abspath $(EXTRACTION_DIR)/schematic)
 TB_DIR:=$(abspath $(EXTRACTION_DIR)/test)
 
 $(shell mkdir -p $(OUTPUT_DIR))
@@ -125,12 +127,12 @@ $(shell mkdir -p $(TB_DIR))
 
 # Schematic test netlist
 
-TB_NETLIST_PREFIX:=$(EXTRACTION_DIR)/schematic/$(TOP)_prefix.spice
+TB_NETLIST:=$(TB_DIR)/$(basename $(notdir $(TB))).spice
 
 # Schematic clean netlist
 
-SCH_NETLIST_PREFIX:=$(EXTRACTION_DIR)/schematic/$(TOP)_prefix.spice
-SCH_NETLIST_NOPREFIX:=$(EXTRACTION_DIR)/schematic/$(TOP)_noprefix.spice
+SCH_NETLIST_PREFIX:=$(SCH_DIR)/$(TOP)_prefix.spice
+SCH_NETLIST_NOPREFIX:=$(SCH_DIR)/$(TOP)_noprefix.spice
 
 # Layout clean netlist
 
@@ -153,7 +155,10 @@ CLEANABLE:= \
 FULL_CLEANABLE:= $(CLEANABLE) \
 	$(foreach module,$(MODULES),$(wildcard $(module)/output/reports/*.lyrdb)) \
 	$(foreach module,$(MODULES),$(wildcard $(module)/output/reports/*.lvsdb)) \
-	$(foreach module,$(MODULES),$(wildcard $(module)/output/reports/*comp.out))
+	$(foreach module,$(MODULES),$(wildcard $(module)/output/reports/*comp.out)) \
+	$(foreach module,$(MODULES),$(wildcard $(module)/output/extraction/*/*.spice)) \
+	$(foreach module,$(MODULES),$(wildcard $(module)/output/extraction/*/*.cir)) \
+	$(foreach module,$(MODULES),$(wildcard $(module)/output/extraction/*/*.raw))
 
 # Logs
 ######

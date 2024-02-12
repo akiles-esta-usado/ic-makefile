@@ -13,20 +13,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Files, directories and Aliases
-################################
-
-KLAYOUT_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_$(TOP).log
-KLAYOUT_LVS_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_lvs_$(TOP).log
-KLAYOUT_DRC_EFABLES_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_drc_efabless_$(TOP).log
-KLAYOUT_DRC_PRECHECK_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_drc_precheck_$(TOP).log
-
 # If this variable is not set correctly. LVS will never succeed
 # This variable is case sensitive, VSS != vss
 GND_NAME:=VSS
 
-TOP_ALL_LYRDB:=$(filter %.lyrdb,$(wildcard $(GDS_REPORT_DIR)/*))
-TOP_ALL_LVSDB:=$(filter %.lvsdb,$(wildcard $(GDS_REPORT_DIR)/*))
+define PARAMETER_ENTRY +=
+
+Klayout variables:
+  GND_NAME: Indicate the substrate potential (lowest) on a specific layout
+
+  ex: make GND_NAME=B
+
+endef
+
+# Files, directories and Aliases
+################################
+
+LOG_KLAYOUT=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_$(TOP).log
+LOG_KLAYOUT_LVS=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_lvs_$(TOP).log
+LOG_KLAYOUT_DRC_EFABLES=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_drc_efabless_$(TOP).log
+LOG_KLAYOUT_DRC_PRECHECK=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_drc_precheck_$(TOP).log
+
+
+ALL_LYRDB:=$(filter %.lyrdb,$(wildcard $(REPORT_DIR)/*))
+ALL_LVSDB:=$(filter %.lvsdb,$(wildcard $(REPORT_DIR)/*))
 
 
 KLAYOUT=klayout -t
@@ -48,7 +58,7 @@ Klayout related rules:
 
   IMPORTANT NOTE!!!
   For LVS commands, it's required to define the variable GND_NAME to the 
-  name that the bulk has on the layout.
+  name that the bulk has on the layout. (See parameters entry)
     $$ make TOP=resistor GND_NAME=B klayout-lvs
 
 endef
@@ -59,21 +69,20 @@ endef
 
 .PHONY: klayout-validation
 klayout-validation:
-ifeq (,$(wildcard $(TOP_GDS)))
-	$(call ERROR_MESSAGE, [klayout] GDS file $(TOP_GDS) doesn't exist$)
+ifeq (,$(wildcard $(GDS)))
+	$(call ERROR_MESSAGE, [klayout] GDS file $(GDS) doesn't exist$)
 endif	
-	$(call INFO_MESSAGE, [klayout] directory:         $(TOP_GDS_DIR))
-	$(call INFO_MESSAGE, [klayout] GDS:               $(TOP_GDS))
+	$(call INFO_MESSAGE, [klayout] GDS:               $(GDS))
+	$(call INFO_MESSAGE, [klayout] directory:         $(GDS_DIR))
 
-ifeq (,$(wildcard $(TOP_NETLIST_SCH)))
+ifeq (,$(wildcard $(SCH_NETLIST_NOPREFIX)))
 	$(call WARNING_MESSAGE, [klayout] Schematic netlist doesn't exist$)
 else
-	$(call INFO_MESSAGE, [klayout] schematic netlist: $(TOP_NETLIST_SCH))
+	$(call INFO_MESSAGE, [klayout] schematic netlist: $(SCH_NETLIST_NOPREFIX))
 endif
-	$(call INFO_MESSAGE, [klayout] gds netlist:       $(TOP_NETLIST_GDS))
-	$(call INFO_MESSAGE, [klayout] schematic netlist: $(wildcard $(TOP_GDS_DIR)/$(TOP)-noprefix.spice))
-	$(call INFO_MESSAGE, [klayout] DRC reports:       $(TOP_ALL_LYRDB))
-	$(call INFO_MESSAGE, [klayout] LVS reports:       $(TOP_ALL_LVSDB))
+	$(call INFO_MESSAGE, [klayout] gds netlist:       $(wildcard $(LAYOUT_NETLIST_KLAYOUT)))
+	$(call INFO_MESSAGE, [klayout] DRC reports:       $(ALL_LYRDB))
+	$(call INFO_MESSAGE, [klayout] LVS reports:       $(ALL_LVSDB))
 
 
 # Visualization
@@ -81,12 +90,12 @@ endif
 
 .PHONY: klayout-view
 klayout-view: klayout-validation
-	$(KLAYOUT) -ne $(TOP_GDS) |& tee $(KLAYOUT_LOG)
+	$(KLAYOUT) -ne $(GDS) |& tee $(LOG_KLAYOUT)
 
 
 .PHONY: klayout-edit
 klayout-edit: klayout-validation
-	$(KLAYOUT) -e $(TOP_GDS) |& tee $(KLAYOUT_LOG)
+	$(KLAYOUT) -e $(GDS) |& tee $(LOG_KLAYOUT)
 
 
 # LVS RULES
@@ -122,32 +131,32 @@ klayout-lvs-help:
 
 .PHONY: klayout-lvs-view
 klayout-lvs-view: klayout-validation
-ifeq (,$(TOP_ALL_LVSDB))
+ifeq (,$(ALL_LVSDB))
 	$(call ERROR_MESSAGE, [klayout] There's no LVS report for $(TOP))
 else
-	$(KLAYOUT) -e $(TOP_GDS) $(foreach file,$(TOP_ALL_LVSDB),-mn $(file))
+	$(KLAYOUT) -e $(GDS) $(foreach file,$(ALL_LVSDB),-mn $(file))
 endif
 
 
 .PHONY: klayout-lvs-only
 klayout-lvs-only: klayout-validation xschem-netlist-lvs-noprefix-fixed
-	$(RM) $(GDS_REPORT_DIR)/*.lvsdb
+	$(RM) $(REPORT_DIR)/*.lvsdb
 
 	# Since the netlist could not exists on first run
-	# It's recommended use TOP.spice instead of TOP_NETLIST_SCH
+	# It's recommended use TOP.spice instead of SCH_NETLIST_NOPREFIX
 	python $(KLAYOUT_HOME)/lvs/run_lvs.py \
 		--variant=D \
 		--run_mode=flat \
 		--verbose \
 		--lvs_sub=$(GND_NAME) \
-		--run_dir=$(GDS_REPORT_DIR) \
-		--layout=$(TOP_GDS) \
-		--netlist=$(TOP_GDS_DIR)/$(TOP)_noprefix.spice \
+		--run_dir=$(REPORT_DIR) \
+		--layout=$(GDS) \
+		--netlist=$(SCH_NETLIST_NOPREFIX) \
 		--top_lvl_pins \
 		--schematic_simplify \
-		--combine |& tee $(KLAYOUT_LVS_LOG) || true
+		--combine |& tee $(LOG_KLAYOUT_LVS) || true
 
-	mv $(GDS_REPORT_DIR)/*.cir $(TOP_GDS_DIR)
+	mv $(REPORT_DIR)/*.cir $(LAYOUT_NETLIST_KLAYOUT)
 
 
 
@@ -161,32 +170,32 @@ klayout-lvs: klayout-lvs-only
 
 .PHONY: klayout-drc-view
 klayout-drc-view: klayout-validation
-ifeq (,$(TOP_ALL_LYRDB))
+ifeq (,$(ALL_LYRDB))
 	$(call ERROR_MESSAGE, [klayout] There's no DRC report for $(TOP))
 else
-	$(KLAYOUT) -e $(TOP_GDS) $(foreach file,$(TOP_ALL_LYRDB),-m $(file))
+	$(KLAYOUT) -e $(GDS) $(foreach file,$(ALL_LYRDB),-m $(file))
 endif
 
 
 .PHONY: klayout-drc-only
 klayout-drc-only: klayout-validation
-	$(RM) $(GDS_REPORT_DIR)/*.lyrdb
+	$(RM) $(REPORT_DIR)/*.lyrdb
 
 	python $(KLAYOUT_HOME)/drc/run_drc.py \
-		--path $(TOP_GDS) \
+		--path $(GDS) \
 		--variant=D \
-		--topcell=$(TOP_GDS_CELL) \
-		--run_dir=$(GDS_REPORT_DIR) \
+		--topcell=$(GDS_CELL) \
+		--run_dir=$(REPORT_DIR) \
 		--run_mode=flat \
 		--antenna \
 		--density \
 		--thr=$(NPROCS) \
-		--verbose |& tee $(KLAYOUT_DRC_EFABLES_LOG) || true
+		--verbose |& tee $(LOG_KLAYOUT_DRC_EFABLES) || true
 
 	$(KLAYOUT) -b -r $(KLAYOUT_HOME)/drc/gf180mcuD_mr.drc \
-		-rd input=$(TOP_GDS) \
-		-rd topcell=$(TOP_GDS_CELL) \
-		-rd report=$(GDS_REPORT_DIR)/precheck_$(TOP).lyrdb \
+		-rd input=$(GDS) \
+		-rd topcell=$(GDS_CELL) \
+		-rd report=$(REPORT_DIR)/precheck_$(TOP).lyrdb \
 		-rd thr=$(NPROCS) \
 		-rd conn_drc=true \
 		-rd split_deep=true \
@@ -198,7 +207,7 @@ klayout-drc-only: klayout-validation
 		-rd verbose=true \
 		-rd run_mode=flat \
 		-rd feol=true \
-		-rd beol=true |& tee $(KLAYOUT_DRC_PRECHECK_LOG) || true
+		-rd beol=true |& tee $(LOG_KLAYOUT_DRC_PRECHECK) || true
 
 
 .PHONY: klayout-drc

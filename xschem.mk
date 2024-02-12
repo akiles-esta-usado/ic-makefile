@@ -30,6 +30,7 @@ endif
 XSCHEM=$(XSCHEM_BINARY) --rcfile $(XSCHEM_RCFILE)
 
 XSCHEM_BATCH=$(XSCHEM) \
+	--netlist \
 	--no_x \
 	--quit
 
@@ -110,8 +111,9 @@ xschem-test-netlist: xschem-validation
 .PHONY: xschem-netlist-lvs-prefix
 xschem-netlist-lvs-prefix: xschem-validation
 	$(XSCHEM_BATCH) \
+	 	--netlist_path $(SCH_DIR) \
+		--netlist_filename $(notdir $(SCH_NETLIST_PREFIX)) \
 		--preinit 'set lvs_netlist 1' \
-		--netlist_filename $(SCH_NETLIST_PREFIX) \
 		$(SCH) |& tee $(LOG_XSCHEM_NETLIST_PREFIX)
 
 
@@ -119,8 +121,9 @@ xschem-netlist-lvs-prefix: xschem-validation
 .PHONY: xschem-netlist-lvs-noprefix
 xschem-netlist-lvs-noprefix: xschem-validation
 	$(XSCHEM_BATCH) \
+		--netlist_path $(SCH_DIR) \
+		--netlist_filename $(notdir $(SCH_NETLIST_NOPREFIX)) \
 		--preinit 'set lvs_netlist 1; set spiceprefix 0' \
-		--netlist_filename $(SCH_NETLIST_NOPREFIX) \
 		$(SCH) |& tee $(LOG_XSCHEM_NETLIST_NOPREFIX)
 
 

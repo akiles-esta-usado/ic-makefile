@@ -18,9 +18,9 @@
 # Files, directories and Aliases
 ################################
 
-MAGIC_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_magic_$(TOP).log
-MAGIC_LVS_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_magic_lvs_$(TOP).log
-MAGIC_PEX_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_magic_pex_$(TOP).log
+LOG_MAGIC=$(LOG_DIR)/$(TIMESTAMP_TIME)_magic_$(TOP).log
+LOG_MAGIC_LVS=$(LOG_DIR)/$(TIMESTAMP_TIME)_magic_lvs_$(TOP).log
+LOG_MAGIC_PEX=$(LOG_DIR)/$(TIMESTAMP_TIME)_magic_pex_$(TOP).log
 
 MAGIC=magic -rcfile $(MAGIC_RCFILE) -noconsole
 MAGIC_BATCH=$(MAGIC) -nowindow -dnull
@@ -35,10 +35,11 @@ gds flatglob via*
 gds flatglob compass*
 gds flatglob rectangle*
 
-gds read $(TOP_GDS)
-#getcell $(TOP_GDS_CELL)
-load $(TOP_GDS_CELL)
+gds read $(GDS)
+load $(GDS_CELL)
 box 0 0 0 0
+
+readspice $(SCH_NETLIST_NOPREFIX)
 
 puts "layout loaded :)"
 endef
@@ -47,13 +48,12 @@ define MAGIC_ROUTINE_LVS =
 drc off
 gds drccheck off
 $(MAGIC_ROUTINE_LOAD)
-readspice $(TOP_NETLIST_LVS_NOPREFIX)
 
 extract
 ext2spice lvs
-ext2spice -o "$(TOP_GDS_DIR)/$(TOP_GDS_CELL)_extracted.spice"
+ext2spice -o "$(LAYOUT_NETLIST_MAGIC)"
 
-puts "Created netlist file $(TOP_GDS_DIR)/$(TOP_GDS_CELL)_extracted.spice"
+puts "Created netlist file $(LAYOUT_NETLIST_MAGIC)"
 quit -noprompt
 endef
 
@@ -61,10 +61,9 @@ define MAGIC_ROUTINE_PEX =
 drc off
 gds drccheck off
 $(MAGIC_ROUTINE_LOAD)
-readspice $(TOP_NETLIST_LVS_NOPREFIX)
 
-flatten $(TOP_GDS_CELL)_pex
-load $(TOP_GDS_CELL)_pex
+flatten $(GDS_CELL)_pex
+load $(GDS_CELL)_pex
 box values 0 0 0 0
 
 extract all
@@ -75,9 +74,9 @@ extresist all
 ext2spice lvs
 ext2spice extresist on
 ext2spice cthresh 0
-ext2spice -o "$(TOP_GDS_DIR)/$(TOP_GDS_CELL)_pex.spice"
+ext2spice -o "$(LAYOUT_NETLIST_PEX)"
 
-puts "Created pex file $(TOP_GDS_DIR)/$(TOP_GDS_CELL)_pex.spice"
+puts "Created pex file $(LAYOUT_NETLIST_PEX)"
 
 quit -noprompt
 endef
@@ -101,19 +100,19 @@ endef
 
 .PHONY: magic-validation
 magic-validation:
-ifeq (,$(wildcard $(TOP_GDS)))
-	$(call ERROR_MESSAGE, [magic] GDS file $(TOP_GDS) doesn't exist$)
+ifeq (,$(wildcard $(GDS)))
+	$(call ERROR_MESSAGE, [magic] GDS file $(GDS) doesn't exist$)
 endif
-	$(call INFO_MESSAGE, [magic] directory:         $(TOP_GDS_DIR))
-	$(call INFO_MESSAGE, [magic] GDS:               $(TOP_GDS))
-	$(call INFO_MESSAGE, [magic] extracted netlist: $(wildcard $(TOP_GDS_DIR)/$(TOP)_extracted.spice))
-	$(call INFO_MESSAGE, [magic] extracted pex:     $(wildcard $(TOP_GDS_DIR)/$(TOP)_pex.spice))
-	$(call INFO_MESSAGE, [magic] rcfile:            $(MAGIC_RCFILE))
+	$(call INFO_MESSAGE, [magic] GDS:               $(wildcard $(GDS)))
+	$(call INFO_MESSAGE, [magic] directory:         $(wildcard $(GDS_DIR)))
+	$(call INFO_MESSAGE, [magic] extracted netlist: $(wildcard $(LAYOUT_NETLIST_MAGIC)))
+	$(call INFO_MESSAGE, [magic] extracted pex:     $(wildcard $(LAYOUT_NETLIST_PEX)))
+	$(call INFO_MESSAGE, [magic] rcfile:            $(wildcard $(MAGIC_RCFILE)))
 
 
 .PHONY: magic-edit
 magic-edit: magic-validation
-	cd $(TOP_GDS_DIR) && $(MAGIC) <<EOF |& tee $(MAGIC_LOG)
+	cd $(GDS_DIR) && $(MAGIC) <<EOF |& tee $(LOG_MAGIC)
 	$(MAGIC_ROUTINE_LOAD)
 	EOF
 
@@ -121,13 +120,13 @@ magic-edit: magic-validation
 # Working on the TOP_DIR for simplicity, maybe we can change a internal variable to write all there.
 .PHONY: magic-lvs-extraction
 magic-lvs-extraction: magic-validation
-	cd $(TOP_GDS_DIR) && $(MAGIC_BATCH) <<EOF |& tee $(MAGIC_LVS_LOG)
+	cd $(GDS_DIR) && $(MAGIC_BATCH) <<EOF |& tee $(LOG_MAGIC_LVS)
 	$(MAGIC_ROUTINE_LVS)
 	EOF
 	
 
 .PHONY: magic-pex-extraction
 magic-pex-extraction: magic-validation
-	cd $(TOP_GDS_DIR) && $(MAGIC_BATCH) <<EOF |& tee $(MAGIC_PEX_LOG)
+	cd $(GDS_DIR) && $(MAGIC_BATCH) <<EOF |& tee $(LOG_MAGIC_PEX)
 	$(MAGIC_ROUTINE_PEX)
 	EOF

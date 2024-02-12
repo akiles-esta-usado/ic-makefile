@@ -125,8 +125,8 @@ dataset=1
 rawfile=$\{netlist_dir\}rawspice.raw
 sim_type=tran}
 B 2 1600 420 2400 820 {flags=graph,unlocked
-y1=0
-y2=0.01
+y1=-1.1
+y2=0.74
 ypos1=0
 ypos2=2
 divy=5
@@ -274,7 +274,7 @@ spice_ignore=0
 value="
 *.include inv_sample_pex.spice
 .include ../layout_pex/inv_sample_pex.spice
-Xinv_pex  vdd vss out_pex in inv_sample_pex
+Xinv_pex  vdd out_pex vss in inv_sample_pex
 "}
 C {devices/vsource.sym} -40 170 0 0 {name=vvss value=0 savecurrent=false}
 C {devices/lab_pin.sym} 40 120 2 0 {name=p4 sig_type=std_logic lab=vdd}

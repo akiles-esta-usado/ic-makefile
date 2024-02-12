@@ -2,7 +2,7 @@
 <report-database>
  <description>DRC Run Report at</description>
  <original-file/>
- <generator>drc: script='/workspaces/DC23-LTC2-LDO/LDO/xschem/test/inv_sample/reports/main.drc'</generator>
+ <generator>drc: script='/workspaces/ic-makefile/samples/inv_sample/output/reports/main.drc'</generator>
  <top-cell>inv_sample</top-cell>
  <tags>
  </tags>

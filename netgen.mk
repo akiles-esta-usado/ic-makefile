@@ -16,18 +16,18 @@
 # Files, directories and Aliases
 ################################
 
-NETGEN_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_netgen_$(TOP).log
+LOG_NETGEN=$(LOG_DIR)/$(TIMESTAMP_TIME)_netgen_$(TOP).log
 
 NETGEN=netgen -batch lvs
 
 NETGEN_LVS_WITH_MAGIC=$(NETGEN) \
-		"$(TOP_NETLIST_LVS_PREFIX) $(TOP_GDS_CELL)" \
-		"$(TOP_EXTRACTED_MAGIC) $(TOP_GDS_CELL)" \
+		"$(SCH_NETLIST_PREFIX) $(GDS_CELL)" \
+		"$(LAYOUT_NETLIST_MAGIC) $(GDS_CELL)" \
 		$(NETGEN_RCFILE)
 
 NETGEN_LVS_WITH_KLAYOUT=$(NETGEN) \
-		"$(TOP_NETLIST_LVS_NOPREFIX) $(TOP_GDS_CELL)" \
-		"$(TOP_EXTRACTED_KLAYOUT) $(TOP_GDS_CELL)" \
+		"$(SCH_NETLIST_NOPREFIX) $(GDS_CELL)" \
+		"$(LAYOUT_NETLIST_KLAYOUT) $(GDS_CELL)" \
 		$(NETGEN_RCFILE)
 
 define HELP_ENTRIES += 
@@ -38,13 +38,13 @@ Netgen related rules:
   netgen-lvs-klayout: Perform LVS with schematic netlist and extracted circuit netlist
 
   Required variables:
-	TOP_GDS:                  Layout file
-	TOP_GDS_CELL:             Cellname in layout file
-	TOP_GDS_DIR:              Directory for layout related information
-	TOP_EXTRACTED_KLAYOUT:    Netlist extracted with klayout
-	TOP_EXTRACTED_MAGIC:      Netlist extracted with magic
-	TOP_NETLIST_LVS_PREFIX:   Schematic extraction with prefix. Required in lvs with magic extraction
-	TOP_NETLIST_LVS_NOPREFIX: Schematic extraction without prefix. Required by klayout
+	GDS:                  Layout file
+	GDS_CELL:             Cellname in layout file
+	GDS_DIR:              Directory for layout related information
+	LAYOUT_NETLIST_KLAYOUT:    Netlist extracted with klayout
+	LAYOUT_NETLIST_MAGIC:      Netlist extracted with magic
+	SCH_NETLIST_PREFIX:   Schematic extraction with prefix. Required in lvs with magic extraction
+	SCH_NETLIST_NOPREFIX: Schematic extraction without prefix. Required by klayout
 	NETGEN_RCFILE:            Configuration file for netgen
 
 endef
@@ -55,34 +55,34 @@ endef
 
 .PHONY: netgen-validation
 netgen-validation:
-ifeq (,$(wildcard $(TOP_GDS)))
-	$(call ERROR_MESSAGE, [netgen] GDS file $(TOP_GDS) doesn't exist$)
+ifeq (,$(wildcard $(GDS)))
+	$(call ERROR_MESSAGE, [netgen] GDS file $(GDS) doesn't exist$)
 endif	
-	$(call INFO_MESSAGE, [netgen] directory:                 $(TOP_GDS_DIR))
-	$(call INFO_MESSAGE, [netgen] GDS:                       $(TOP_GDS))
-	$(call INFO_MESSAGE, [netgen] xschem netlist w/prefix:   $(TOP_NETLIST_LVS_PREFIX))
-	$(call INFO_MESSAGE, [netgen] xschem netlist wo/prefix:  $(TOP_NETLIST_LVS_NOPREFIX))
-	$(call INFO_MESSAGE, [netgen] magic extracted netlist:   $(TOP_EXTRACTED_MAGIC))
-	$(call INFO_MESSAGE, [netgen] klayout extracted netlist: $(TOP_EXTRACTED_KLAYOUT))
-	$(call INFO_MESSAGE, [netgen] rc file:                   $(NETGEN_RCFILE))
+	$(call INFO_MESSAGE, [netgen] directory:                 $(wildcard $(GDS_DIR)))
+	$(call INFO_MESSAGE, [netgen] GDS:                       $(wildcard $(GDS)))
+	$(call INFO_MESSAGE, [netgen] xschem netlist w/prefix:   $(wildcard $(SCH_NETLIST_PREFIX)))
+	$(call INFO_MESSAGE, [netgen] xschem netlist wo/prefix:  $(wildcard $(SCH_NETLIST_NOPREFIX)))
+	$(call INFO_MESSAGE, [netgen] magic extracted netlist:   $(wildcard $(LAYOUT_NETLIST_MAGIC)))
+	$(call INFO_MESSAGE, [netgen] klayout extracted netlist: $(wildcard $(LAYOUT_NETLIST_KLAYOUT)))
+	$(call INFO_MESSAGE, [netgen] rc file:                   $(wildcard $(NETGEN_RCFILE)))
 
 
 .PHONY: netgen-lvs-magic
 netgen-lvs-magic: netgen-validation magic-lvs-extraction xschem-netlist-lvs-prefix
-	cd $(TOP_GDS_DIR) && $(NETGEN_LVS_WITH_MAGIC) |& tee $(NETGEN_LOG) || true
-	mv $(TOP_GDS_DIR)/comp.out $(GDS_REPORT_DIR)/lvs_magic_comp.out
-	grep "Netlist" $(GDS_REPORT_DIR)/lvs_magic_comp.out
+	cd $(GDS_DIR) && $(NETGEN_LVS_WITH_MAGIC) |& tee $(LOG_NETGEN) || true
+	mv $(GDS_DIR)/comp.out $(REPORT_DIR)/lvs_magic_comp.out
+	grep "Netlist" $(REPORT_DIR)/lvs_magic_comp.out
 
 .PHONY: netgen-lvs-klayout
 netgen-lvs-klayout: netgen-validation xschem-netlist-lvs-noprefix
-ifeq (,$(TOP_EXTRACTED_KLAYOUT))
+ifeq (,$(LAYOUT_NETLIST_KLAYOUT))
 	$(call ERROR_MESSAGE, There's no klayout extracted netlist. run `klayout-lvs`)
 endif
-	sed -i '/C.*cap_mim_2f0_m4m5_noshield/s/W/c_width/' $(TOP_EXTRACTED_KLAYOUT)
-	sed -i '/C.*cap_mim_2f0_m4m5_noshield/s/L/c_length/' $(TOP_EXTRACTED_KLAYOUT)
-	sed -i '/R.*ppoly/s/W/r_width/' $(TOP_EXTRACTED_KLAYOUT)
-	sed -i '/R.*ppoly/s/L/r_length/' $(TOP_EXTRACTED_KLAYOUT)
+	sed -i '/C.*cap_mim_2f0_m4m5_noshield/s/W/c_width/' $(LAYOUT_NETLIST_KLAYOUT)
+	sed -i '/C.*cap_mim_2f0_m4m5_noshield/s/L/c_length/' $(LAYOUT_NETLIST_KLAYOUT)
+	sed -i '/R.*ppoly/s/W/r_width/' $(LAYOUT_NETLIST_KLAYOUT)
+	sed -i '/R.*ppoly/s/L/r_length/' $(LAYOUT_NETLIST_KLAYOUT)
 
-	cd $(TOP_GDS_DIR) && $(NETGEN_LVS_WITH_KLAYOUT) |& tee $(NETGEN_LOG) || true
-	mv $(TOP_GDS_DIR)/comp.out $(GDS_REPORT_DIR)/lvs_klayout_comp.out
-	grep "Netlist" $(GDS_REPORT_DIR)/lvs_klayout_comp.out
+	cd $(GDS_DIR) && $(NETGEN_LVS_WITH_KLAYOUT) |& tee $(LOG_NETGEN) || true
+	mv $(GDS_DIR)/comp.out $(REPORT_DIR)/lvs_klayout_comp.out
+	grep "Netlist" $(REPORT_DIR)/lvs_klayout_comp.out

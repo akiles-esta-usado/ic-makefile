@@ -16,9 +16,15 @@
 # Files, directories and Aliases
 ################################
 
-NGSPICE_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_ngspice_$(TOP).log
+LOG_NGSPICE=$(LOG_DIR)/$(TIMESTAMP_TIME)_ngspice_$(TOP).log
 
-NGSPICE=SPICE_USERINIT_DIR=$(PWD) ngspice -a --define=num_threads=$(NPROCS)
+NGSPICE=SPICE_USERINIT_DIR=$(NGSPICE_RCDIR) ngspice \
+	-a \
+	--define=num_threads=$(NPROCS)
+
+# This allows using by default the tb name on the raw name.
+# TODO: See how to define with xschem the name of the raw file.
+# -r $(basename $(notdir $(TB_NETLIST))).raw
 
 define HELP_ENTRIES +=
 
@@ -31,6 +37,22 @@ endef
 # Rules
 #######
 
+.PHONY: ngspice-validation
+ngspice-validation:
+ifeq (,$(TEST))
+	$(call WARNING_MESSAGE, [ngspice] TEST not selected)
+endif
+
+ifeq (,$(TB))
+	$(call ERROR_MESSAGE, [ngspice] There aren't testbenchs)
+endif
+
+	$(call INFO_MESSAGE, [ngspice] Testbench:            $(wildcard $(TB)))
+	$(call INFO_MESSAGE, [ngspice] Directory:            $(wildcard $(TB_DIR)))
+	$(call INFO_MESSAGE, [ngspice] Testbench netlist:    $(wildcard $(TB_NETLIST)))
+	$(call INFO_MESSAGE, [ngspice] All testbenchs:       $(wildcard $(TBS)))
+
+
 .PHONY: ngspice-sim
-ngspice-sim: xschem-netlist
-	cd $(dir $(TOP_SCH)) && $(NGSPICE) $(TOP_NETLIST_SCH) |& tee $(NGSPICE_LOG)
+ngspice-sim: ngspice-validation xschem-test-netlist
+	cd $(TB_DIR) && $(NGSPICE) $(TB_NETLIST) |& tee $(LOG_NGSPICE)
