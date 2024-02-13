@@ -37,6 +37,7 @@ MAGIC_RCFILE=$(realpath ./samples/magicrc)
 NETGEN_RCFILE=$(realpath $(PDK_ROOT)/$(PDK)/libs.tech/netgen/setup.tcl)
 NGSPICE_RCDIR=$(realpath ./samples)
 EBC_DIR=$(realpath ./extra_be_checks)
+EBC_UPRJ_ROOT=$(realpath ./samples)
 EBC_CONFIG=$(realpath ./samples/lvs_config.json)
 
 

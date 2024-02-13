@@ -32,21 +32,14 @@ inv_sample
 │   ├── inv_sample_test.sch
 │   └── inv_sample_test.spice
 ├── layout
-│   ├── inv_sample.ext
 │   ├── inv_sample.gds
-│   ├── inv_sample_pex.ext
-│   ├── inv_sample_pex.nodes
-│   ├── inv_sample_pex.res.ext
-│   ├── inv_sample_pex.sim
-│   ├── nfet$1.ext
-│   └── pfet.ext
 └── output
     ├── extraction
-    │   ├── layout_clean                    Layout clean extraction
-    │   │   ├── inv_sample.cir
-    │   │   └── inv_sample_extracted.spice
-    │   ├── layout_pex                      Layout parasitic extraction
-    │   │   └── inv_sample_pex.spice
+    │   ├── layout_clean                    
+    │   │   ├── inv_sample.cir              Klayout clean extraction
+    │   │   └── inv_sample_extracted.spice  Magic clean
+    │   ├── layout_pex                      
+    │   │   └── inv_sample_pex.spice        Magic parasitic extraction
     │   ├── schematic                       Schematic extractions with xschem
     │   │   ├── inv_sample.spice
     │   │   ├── inv_sample_noprefix.spice
@@ -55,11 +48,11 @@ inv_sample
     │       ├── inv_sample_test.spice
     │       └── rawspice.raw
     └── reports
-        ├── inv_sample_antenna.lyrdb     DRC file from klayout
-        ├── inv_sample_density.lyrdb     DRC file from klayout
-        ├── precheck_inv_sample.lyrdb    DRC file from klayout
-        ├── inv_sample_main.lyrdb        DRC file from klayout
+        ├── inv_sample_antenna.lyrdb     DRC files from klayout
+        ├── inv_sample_density.lyrdb
+        ├── precheck_inv_sample.lyrdb
+        ├── inv_sample_main.lyrdb
         ├── inv_sample.lvsdb             LVS file from klayout
-        ├── lvs_klayout_comp.out         LVS file from netgen
-        └── lvs_magic_comp.out           LVS file from netgen
+        ├── lvs_klayout_comp.out         LVS files from netgen
+        └── lvs_magic_comp.out
 ~~~

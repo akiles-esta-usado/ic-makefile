@@ -28,6 +28,7 @@ EBC_SIGNOFF=$(OUTPUT_DIR)/ebc/signoff
 
 
 ENVIRON= \
+	UPRJ_ROOT=$(EBC_UPRJ_ROOT) \
 	LVS_ROOT=$(EBC_DIR) \
 	WORK_ROOT=$(EBC_WORKDIR) \
 	LOG_ROOT=$(EBC_LOGS) \
@@ -59,7 +60,7 @@ endef
 #######
 
 .PHONY: ebc-validation
-ebc-validation:
+ebc-validation: xschem-netlist-lvs-noprefix
 ifeq (,$(EBC_DIR))
 	$(call ERROR_MESSAGE, [extra-be-checks] There's no EBC installation)
 endif
@@ -73,9 +74,11 @@ endif
 	$(shell mkdir -p $(EBC_LOGS))
 	$(shell mkdir -p $(EBC_SIGNOFF))
 
-	$(call INFO_MESSAGE, [extra-be-checks] installation dir:  $(EBC_DIR))
-	$(call INFO_MESSAGE, [extra-be-checks] work dir:          $(EBC_WORKDIR))
-	$(call INFO_MESSAGE, [extra-be-checks] GDS:               $(GDS))
+	$(call INFO_MESSAGE, [extra-be-checks] installation dir:  $(wildcard $(EBC_DIR)))
+	$(call INFO_MESSAGE, [extra-be-checks] work dir:          $(wildcard $(EBC_WORKDIR)))
+	$(call INFO_MESSAGE, [extra-be-checks] GDS:               $(wildcard $(GDS)))
+	$(call INFO_MESSAGE, [extra-be-checks] Spice              $(wildcard $(SCH_NETLIST_PREFIX)))
+	$(call INFO_MESSAGE, [extra-be-checks] Spice (noprefix)   $(wildcard $(SCH_NETLIST_NOPREFIX)))
 
 
 .PHONY: ebc-hier
