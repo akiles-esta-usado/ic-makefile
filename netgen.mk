@@ -20,6 +20,9 @@ LOG_NETGEN=$(LOG_DIR)/$(TIMESTAMP_TIME)_netgen_$(TOP).log
 
 NETGEN=netgen -batch lvs
 
+NETGEN_LVS_REPORT_MAGIC=$(REPORT_DIR)/lvs_magic_comp.out
+NETGEN_LVS_REPORT_KLAYOUT=$(REPORT_DIR)/lvs_klayout_comp.out
+
 NETGEN_LVS_WITH_MAGIC=$(NETGEN) \
 		"$(SCH_NETLIST_PREFIX) $(GDS_CELL)" \
 		"$(LAYOUT_NETLIST_MAGIC) $(GDS_CELL)" \
@@ -65,13 +68,17 @@ endif
 	$(call INFO_MESSAGE, [netgen] magic extracted netlist:   $(wildcard $(LAYOUT_NETLIST_MAGIC)))
 	$(call INFO_MESSAGE, [netgen] klayout extracted netlist: $(wildcard $(LAYOUT_NETLIST_KLAYOUT)))
 	$(call INFO_MESSAGE, [netgen] rc file:                   $(wildcard $(NETGEN_RCFILE)))
+	$(call INFO_MESSAGE, [netgen] lvs report magic:          $(wildcard $(NETGEN_LVS_REPORT_KLAYOUT)))
+	$(call INFO_MESSAGE, [netgen] lvs report klayout:        $(wildcard $(NETGEN_LVS_REPORT_MAGIC)))
 
 
 .PHONY: netgen-lvs-magic
 netgen-lvs-magic: netgen-validation magic-lvs-extraction xschem-netlist-lvs-prefix
 	cd $(GDS_DIR) && $(NETGEN_LVS_WITH_MAGIC) |& tee $(LOG_NETGEN) || true
-	mv $(GDS_DIR)/comp.out $(REPORT_DIR)/lvs_magic_comp.out
-	grep "Netlist" $(REPORT_DIR)/lvs_magic_comp.out
+	mv $(GDS_DIR)/comp.out $(NETGEN_LVS_REPORT_MAGIC)
+	@echo Created $(NETGEN_LVS_REPORT_MAGIC)
+	grep "Netlist" $(NETGEN_LVS_REPORT_MAGIC)
+
 
 .PHONY: netgen-lvs-klayout
 netgen-lvs-klayout: netgen-validation xschem-netlist-lvs-noprefix
@@ -84,5 +91,6 @@ endif
 	sed -i '/R.*ppoly/s/L/r_length/' $(LAYOUT_NETLIST_KLAYOUT)
 
 	cd $(GDS_DIR) && $(NETGEN_LVS_WITH_KLAYOUT) |& tee $(LOG_NETGEN) || true
-	mv $(GDS_DIR)/comp.out $(REPORT_DIR)/lvs_klayout_comp.out
-	grep "Netlist" $(REPORT_DIR)/lvs_klayout_comp.out
+	mv $(GDS_DIR)/comp.out $(NETGEN_LVS_REPORT_KLAYOUT)
+	@echo Created $(NETGEN_LVS_REPORT_KLAYOUT)
+	grep "Netlist" $(NETGEN_LVS_REPORT_KLAYOUT)

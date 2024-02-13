@@ -33,11 +33,20 @@ ENVIRON= \
 	LOG_ROOT=$(EBC_LOGS) \
 	SIGNOFF_ROOT=$(EBC_SIGNOFF)
 
-EBC_SOFT_CHECK=$(ENVIRON) $(EBC_DIR)/run_scheck
-EBC_HIER_CHECK=$(ENVIRON) $(EBC_DIR)/run_hier_check
-EBC_FULL_LVS=$(ENVIRON) $(EBC_DIR)/run_full_lvs
-EBC_CVC=$(ENVIRON) $(EBC_DIR)/run_cvc
-EBC_OEB=$(ENVIRON) $(EBC_DIR)/run_oeb_check
+# run_softcheck [--noextract] [lvs_config_file [top_layout [layout_file]]]
+EBC_SOFT_CHECK=$(ENVIRON) $(EBC_DIR)/run_scheck      $(EBC_CONFIG) $(GDS_CELL) $(GDS)
+
+# run_hier_check top_source verilog_files top_layout layout_file [primitive_prefix [layout_prefix]]
+EBC_HIER_CHECK=$(ENVIRON) $(EBC_DIR)/run_hier_check	 $(EBC_CONFIG)
+
+# run_full_lvs [--noextract] [lvs_config_file [top_source [top_layout [layout_file]]]]
+EBC_FULL_LVS=$(ENVIRON) $(EBC_DIR)/run_full_lvs      $(EBC_CONFIG) $(TOP) $(GDS_CELL) $(GDS)
+
+# run_cvc [--noextract] [lvs_config_file [top_layout [layout_file]]]]
+EBC_CVC=$(ENVIRON) $(EBC_DIR)/run_cvc                $(EBC_CONFIG) $(GDS_CELL) $(GDS)
+
+# run_oeb_check [--noextract] [lvs_config_file [top_layout [layout_file]]]]
+EBC_OEB=$(ENVIRON) $(EBC_DIR)/run_oeb_check          $(EBC_CONFIG) $(GDS_CELL) $(GDS)
 
 
 define HELP_ENTRIES +=
@@ -69,7 +78,26 @@ endif
 	$(call INFO_MESSAGE, [extra-be-checks] GDS:               $(GDS))
 
 
+.PHONY: ebc-hier
+ebc-hier:
+	$(EBC_HIER_CHECK) |& tee $(LOG_EBC_HIER_CHECK)
+
+
 .PHONY: ebc-softcheck
 ebc-softcheck: ebc-validation
-	$(EBC_SOFT_CHECK) $(EBC_CONFIG) $(GDS_CELL) $(GDS) \
-	|& tee $(LOG_EBC_SOFT_CHECK)
+	$(EBC_SOFT_CHECK) |& tee $(LOG_EBC_SOFT_CHECK)
+
+
+.PHONY: ebc-lvs
+ebc-lvs: ebc-validation
+	$(EBC_FULL_LVS) |& tee $(LOG_EBC_SOFT_CHECK)
+
+
+.PHONY: ebc-cvc
+ebc-cvc: ebc-validation
+	$(EBC_CVC) |& tee $(LOG_EBC_CVC)
+
+
+.PHONY: ebc-oeb
+ebc-oeb: ebc-validation
+	$(EBC_OEB) |& tee $(LOG_EBC_OEB)

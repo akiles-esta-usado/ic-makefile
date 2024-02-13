@@ -276,7 +276,7 @@ spice_ignore=0
 value="
 *.include inv_sample_pex.spice
 .include ../layout_pex/inv_sample_pex.spice
-Xinv_pex  vdd out_pex vss in inv_sample_pex
+Xinv_pex  vdd out_pex in vss inv_sample_pex
 "}
 C {devices/vsource.sym} -40 170 0 0 {name=vvss value=0 savecurrent=false}
 C {devices/lab_pin.sym} 40 120 2 0 {name=p4 sig_type=std_logic lab=vdd}

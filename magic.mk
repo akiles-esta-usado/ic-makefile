@@ -98,8 +98,9 @@ endef
 # Rules
 #######
 
+# Almost all magic commands require load the gds and pin ordering with a spice extracted from schematic
 .PHONY: magic-validation
-magic-validation:
+magic-validation: xschem-netlist-lvs-noprefix
 ifeq (,$(wildcard $(GDS)))
 	$(call ERROR_MESSAGE, [magic] GDS file $(GDS) doesn't exist$)
 endif
@@ -119,14 +120,14 @@ magic-edit: magic-validation
 
 # Working on the TOP_DIR for simplicity, maybe we can change a internal variable to write all there.
 .PHONY: magic-lvs-extraction
-magic-lvs-extraction: magic-validation xschem-netlist-lvs-noprefix
+magic-lvs-extraction: magic-validation
 	cd $(GDS_DIR) && $(MAGIC_BATCH) <<EOF |& tee $(LOG_MAGIC_LVS)
 	$(MAGIC_ROUTINE_LVS)
 	EOF
 	
 
 .PHONY: magic-pex-extraction
-magic-pex-extraction: magic-validation xschem-netlist-lvs-noprefix
+magic-pex-extraction: magic-validation
 	cd $(GDS_DIR) && $(MAGIC_BATCH) <<EOF |& tee $(LOG_MAGIC_PEX)
 	$(MAGIC_ROUTINE_PEX)
 	EOF

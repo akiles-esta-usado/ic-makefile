@@ -27,7 +27,7 @@ ifeq (,$(XSCHEM_BINARY))
 XSCHEM_BINARY=xschem
 endif
 
-XSCHEM=$(XSCHEM_BINARY) --rcfile $(XSCHEM_RCFILE)
+XSCHEM=$(XSCHEM_BINARY) --rcfile $(XSCHEM_RCFILE) -r
 
 XSCHEM_BATCH=$(XSCHEM) \
 	--netlist \
