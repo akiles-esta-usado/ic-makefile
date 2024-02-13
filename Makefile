@@ -36,6 +36,8 @@ XSCHEM_RCFILE=$(realpath ./samples/xschemrc)
 MAGIC_RCFILE=$(realpath ./samples/magicrc)
 NETGEN_RCFILE=$(realpath $(PDK_ROOT)/$(PDK)/libs.tech/netgen/setup.tcl)
 NGSPICE_RCDIR=$(realpath ./samples)
+EBC_DIR=$(realpath ./extra_be_checks)
+EBC_CONFIG=$(realpath ./samples/lvs_config.json)
 
 
 
@@ -153,6 +155,7 @@ CLEANABLE:= \
 	$(foreach module,$(MODULES),$(wildcard $(module)/layout/*.nodes))
 
 FULL_CLEANABLE:= $(CLEANABLE) \
+	$(foreach module,$(MODULES),$(wildcard $(module)/output/ebc)) \
 	$(foreach module,$(MODULES),$(wildcard $(module)/output/reports/*.lyrdb)) \
 	$(foreach module,$(MODULES),$(wildcard $(module)/output/reports/*.lvsdb)) \
 	$(foreach module,$(MODULES),$(wildcard $(module)/output/reports/*comp.out)) \

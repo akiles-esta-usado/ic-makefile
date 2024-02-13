@@ -119,14 +119,14 @@ magic-edit: magic-validation
 
 # Working on the TOP_DIR for simplicity, maybe we can change a internal variable to write all there.
 .PHONY: magic-lvs-extraction
-magic-lvs-extraction: magic-validation
+magic-lvs-extraction: magic-validation xschem-netlist-lvs-noprefix
 	cd $(GDS_DIR) && $(MAGIC_BATCH) <<EOF |& tee $(LOG_MAGIC_LVS)
 	$(MAGIC_ROUTINE_LVS)
 	EOF
 	
 
 .PHONY: magic-pex-extraction
-magic-pex-extraction: magic-validation
+magic-pex-extraction: magic-validation xschem-netlist-lvs-noprefix
 	cd $(GDS_DIR) && $(MAGIC_BATCH) <<EOF |& tee $(LOG_MAGIC_PEX)
 	$(MAGIC_ROUTINE_PEX)
 	EOF

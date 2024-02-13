@@ -55,7 +55,7 @@ Xinv_pex  vdd out_pex vss in inv_sample_pex
 
 
 .control
-save in out out_pex v-sweep
+save in out out_pex
 
 dc vin 0 3.3 0.001
 *plot out vs in out_pex vs in

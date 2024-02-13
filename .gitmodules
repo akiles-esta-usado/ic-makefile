@@ -1,0 +1,3 @@
+[submodule "extra_be_checks"]
+	path = extra_be_checks
+	url = https://github.com/d-m-bailey/extra_be_checks.git

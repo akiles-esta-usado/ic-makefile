@@ -1,4 +1,4 @@
-v {xschem version=3.4.4 file_version=1.2
+v {xschem version=3.4.5 file_version=1.2
 }
 G {}
 K {}
@@ -6,8 +6,8 @@ V {}
 S {}
 E {}
 B 2 780 840 1580 1240 {flags=graph,unlocked
-y1=-7.3e-06
-y2=3.5
+y1=0
+y2=3.3
 ypos1=0
 ypos2=2
 divy=5
@@ -26,14 +26,15 @@ unitx=1
 logx=0
 logy=0
 
-color="5 6"
+color="5 6 4"
 node="out
-out_pex"
+out_pex
+v-sweep"
 
 digital=0
 rainbow=1
 dataset=0
-rawfile=$\{netlist_dir\}rawspice.raw
+rawfile=$netlist_dir/rawspice.raw
 sim_type=dc}
 B 2 1600 840 2400 1240 {flags=graph,unlocked
 y1=-0.0028
@@ -62,11 +63,11 @@ node="\\"Difference between clean and pex; out out_pex -\\""
 digital=0
 rainbow=1
 dataset=0
-rawfile=$\{netlist_dir\}rawspice.raw
+rawfile=$netlist_dir/rawspice.raw
 sim_type=dc}
 B 2 780 0 1580 400 {flags=graph,unlocked
-y1=1.1e-08
-y2=3.3
+y1=-0.011
+y2=3.5
 ypos1=0
 ypos2=2
 divy=5
@@ -92,11 +93,11 @@ node="\\"out\\"
 digital=0
 rainbow=1
 dataset=0
-rawfile=$\{netlist_dir\}rawspice.raw
+rawfile=$netlist_dir/rawspice.raw
 sim_type=tran}
 B 2 780 420 1580 820 {flags=graph,unlocked
-y1=1.1e-08
-y2=3.3
+y1=-0.011
+y2=3.5
 ypos1=0
 ypos2=2
 divy=5
@@ -122,7 +123,7 @@ node="\\"out\\"
 digital=0
 rainbow=0
 dataset=1
-rawfile=$\{netlist_dir\}rawspice.raw
+rawfile=$netlist_dir/rawspice.raw
 sim_type=tran}
 B 2 1600 420 2400 820 {flags=graph,unlocked
 y1=-1.1
@@ -151,7 +152,7 @@ node="\\"Tran difference;out out_pex -\\""
 digital=0
 rainbow=0
 dataset=1
-rawfile=$\{netlist_dir\}rawspice.raw
+rawfile=$netlist_dir/rawspice.raw
 sim_type=tran}
 T {Template usage:
 
@@ -161,6 +162,12 @@ T {Template usage:
 2. Each simulation of set of simulations should be contained on the same control block.
 3. Use Shift-S to change element processing order.
 4. Graphs should use the dataset index in the same order of element processing} 970 -210 0 0 0.4 0.4 {}
+T {Graph Configuration:
+Each graph has 3 configurations BEFORE plotting:
+
+1. Set rawfile
+2. Signals in Graph indicates the type of simulation (dc, tran)
+3. Set dataset index} 1820 -160 0 0 0.4 0.4 {}
 N -40 200 -40 210 {
 lab=GND}
 N 40 200 40 210 {
@@ -206,11 +213,9 @@ write
 .endc
 "}
 C {devices/launcher.sym} 680 -40 0 0 {name=h2
-descr="Load TRAN 3.4.4-"
+descr="Load TRAN"
 tclcommand="
 set filepath $\{netlist_dir\}/rawspice.raw
-set version [xschem get version]
-
 puts $filepath
 
 xschem raw_clear
@@ -247,22 +252,19 @@ C {devices/launcher.sym} 680 -140 0 0 {name=h5
 descr="Load ALL 3.4.5+"
 tclcommand="
 set filepath $\{netlist_dir\}/rawspice.raw
-set version [xschem get version]
 
 puts $filepath
 
 xschem raw clear
-xschem raw read $filepath dc
 xschem raw read $filepath tran
-xschem raw info
-
+xschem redraw
+xschem raw read $filepath dc
+xschem redraw
 "}
 C {devices/launcher.sym} 680 -80 0 0 {name=h1
-descr="Load DC 3.4.4-"
+descr="Load DC"
 tclcommand="
 set filepath $\{netlist_dir\}/rawspice.raw
-set version [xschem get version]
-
 puts $filepath
 
 xschem raw_clear
@@ -298,7 +300,7 @@ only_toplevel=false
 spice_ignore=0
 value="
 .control
-save in out out_pex v-sweep
+save in out out_pex
 
 dc vin 0 3.3 0.001
 *plot out vs in out_pex vs in

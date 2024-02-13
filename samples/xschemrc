@@ -2,15 +2,20 @@ source $env(PDK_ROOT)/gf180mcuD/libs.tech/xschem/xschemrc
 
 set script_path [ file dirname [ file normalize [ info script ] ] ]
 
-foreach ldo_directory [ glob -nocomplain -type d * ] {
+# Please fix this mess eventually
 
-    set ldo_files {}
+append XSCHEM_LIBRARY_PATH :$script_path/inv_sample
 
-    append ldo_files [ glob -nocomplain ./$ldo_directory/*.sch ]
-    append ldo_files [ glob -nocomplain ./$ldo_directory/*.sym ]
+foreach module [ glob -nocomplain -type d * ] {
+    puts module
 
-    if { [ llength $ldo_files ] > 0 } {
-        append XSCHEM_LIBRARY_PATH :$script_path/$ldo_directory
+    set xschem_files {}
+
+    append xschem_files [ glob -nocomplain $script_path/$module/symbol/*.sch ]
+    append xschem_files [ glob -nocomplain $script_path/$module/symbol/*.sym ]
+
+    if { [ llength $xschem_files ] > 0 } {
+        append XSCHEM_LIBRARY_PATH :$script_path/$module
     }
 }
 
@@ -18,7 +23,7 @@ set XSCHEM_START_WINDOW {0_top.sch}
 
 
 proc create_empty_sch { filename } {
-    puts "Hola $filename"
+    puts "Creating $filename"
     xschem clear force
     xschem saveas $filename schematic
     exit

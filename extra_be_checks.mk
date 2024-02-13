@@ -16,31 +16,28 @@
 # Files, directories and Aliases
 ################################
 
-EBC_SOFT_CHECK_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_ebc_soft_check_$(TOP).log
-EBC_HIER_CHECK_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_ebc_hier_check$(TOP).log
-EBC_FULL_LVS_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_ebc_lvs_$(TOP).log
-EBC_CVC_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_ebc_cvc_$(TOP).log
-EBC_OEB_LOG=$(LOG_DIR)/$(TIMESTAMP_TIME)_ebc_oeb_$(TOP).log
+LOG_EBC_SOFT_CHECK=$(LOG_DIR)/$(TIMESTAMP_TIME)_ebc_soft_check_$(TOP).log
+LOG_EBC_HIER_CHECK=$(LOG_DIR)/$(TIMESTAMP_TIME)_ebc_hier_check$(TOP).log
+LOG_EBC_FULL_LVS=$(LOG_DIR)/$(TIMESTAMP_TIME)_ebc_lvs_$(TOP).log
+LOG_EBC_CVC=$(LOG_DIR)/$(TIMESTAMP_TIME)_ebc_cvc_$(TOP).log
+LOG_EBC_OEB=$(LOG_DIR)/$(TIMESTAMP_TIME)_ebc_oeb_$(TOP).log
 
+EBC_WORKDIR=$(OUTPUT_DIR)/ebc/work
+EBC_LOGS=$(OUTPUT_DIR)/ebc/logs
+EBC_SIGNOFF=$(OUTPUT_DIR)/ebc/signoff
 
-EBC_BASE=$(realpath ../extra_be_checks)
-EBC_WORKDIR=$(TOP_GDS_DIR)/ebc
-EBC_LOGS=$(EBC_WORKDIR)/logs
-EBC_SIGNOFF=$(EBC_WORKDIR)/signoff
-
-EBC_CONFIG=$(realpath ./lvs_config.json)
 
 ENVIRON= \
-	LVS_ROOT=$(EBC_BASE) \
+	LVS_ROOT=$(EBC_DIR) \
 	WORK_ROOT=$(EBC_WORKDIR) \
 	LOG_ROOT=$(EBC_LOGS) \
 	SIGNOFF_ROOT=$(EBC_SIGNOFF)
 
-EBC_SOFT_CHECK=$(ENVIRON) $(EBC_BASE)/run_scheck
-EBC_HIER_CHECK=$(ENVIRON) $(EBC_BASE)/run_hier_check
-EBC_FULL_LVS=$(ENVIRON) $(EBC_BASE)/run_full_lvs
-EBC_CVC=$(ENVIRON) $(EBC_BASE)/run_cvc
-EBC_OEB=$(ENVIRON) $(EBC_BASE)/run_oeb_check
+EBC_SOFT_CHECK=$(ENVIRON) $(EBC_DIR)/run_scheck
+EBC_HIER_CHECK=$(ENVIRON) $(EBC_DIR)/run_hier_check
+EBC_FULL_LVS=$(ENVIRON) $(EBC_DIR)/run_full_lvs
+EBC_CVC=$(ENVIRON) $(EBC_DIR)/run_cvc
+EBC_OEB=$(ENVIRON) $(EBC_DIR)/run_oeb_check
 
 
 define HELP_ENTRIES +=
@@ -54,11 +51,11 @@ endef
 
 .PHONY: ebc-validation
 ebc-validation:
-ifeq (,$(EBC_BASE))
+ifeq (,$(EBC_DIR))
 	$(call ERROR_MESSAGE, [extra-be-checks] There's no EBC installation)
 endif
-ifeq (,$(wildcard $(TOP_GDS)))
-	$(call ERROR_MESSAGE, [extra-be-checks] GDS file $(TOP_GDS) doesn't exist)
+ifeq (,$(wildcard $(GDS)))
+	$(call ERROR_MESSAGE, [extra-be-checks] GDS file $(GDS) doesn't exist)
 endif
 ifeq (,$(EBC_CONFIG))
 	$(call ERROR_MESSAGE, [extra-be-checks] There is no config file)
@@ -67,11 +64,12 @@ endif
 	$(shell mkdir -p $(EBC_LOGS))
 	$(shell mkdir -p $(EBC_SIGNOFF))
 
-	$(call INFO_MESSAGE, [extra-be-checks] installation dir:  $(EBC_BASE))
+	$(call INFO_MESSAGE, [extra-be-checks] installation dir:  $(EBC_DIR))
 	$(call INFO_MESSAGE, [extra-be-checks] work dir:          $(EBC_WORKDIR))
-	$(call INFO_MESSAGE, [extra-be-checks] GDS:               $(TOP_GDS))
+	$(call INFO_MESSAGE, [extra-be-checks] GDS:               $(GDS))
+
 
 .PHONY: ebc-softcheck
 ebc-softcheck: ebc-validation
-	$(EBC_SOFT_CHECK) $(EBC_CONFIG) $(TOP_GDS_CELL) $(TOP_GDS) \
-	|& tee $(EBC_SOFT_CHECK_LOG)
+	$(EBC_SOFT_CHECK) $(EBC_CONFIG) $(GDS_CELL) $(GDS) \
+	|& tee $(LOG_EBC_SOFT_CHECK)
