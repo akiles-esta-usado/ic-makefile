@@ -59,6 +59,7 @@ define PRINT_LIST =
 	$(shell echo $(1) | tr " " "\t")
 endef
 
+
 test-colors:
 	@echo -e "$(COLOR_BLACK) hola_0 $(COLOR_END)"
 	@echo -e "$(COLOR_RED) hola_1 $(COLOR_END)"
@@ -73,11 +74,17 @@ test-colors:
 clean:
 	$(RM) $(CLEANABLE)
 
+
 full-clean:
 	$(RM) $(FULL_CLEANABLE)
+
 
 # https://www.cmcrossroads.com/article/printing-value-makefile-variable
 # https://stackoverflow.com/questions/16467718/how-to-print-out-a-variable-in-makefile
 #print_% : ; $(info $*: $(flavor $*) variable - $($*)) @true
 #print_% : ; $(call INFO_MESSAGE,$*:$(TERM_TAB)$(TERM_SMUL)$(flavor $*)$(TERM_RMUL)$(TERM_TAB)$($*)) @true
 print_% : ; $(call INFO_MESSAGE,$*:$(TERM_TAB)$(TERM_SMUL)$(flavor $*)$(TERM_RMUL)$(TERM_TAB)$(call PRINT_LIST,$($*))) @true
+
+
+print_sorted_%:
+	$(MAKE) print_$* | tr "\t" "\n"

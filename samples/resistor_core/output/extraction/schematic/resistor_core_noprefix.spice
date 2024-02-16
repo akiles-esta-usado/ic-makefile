@@ -1,0 +1,6 @@
+** sch_path: /workspaces/ic-makefile/samples/resistor_core/symbol/resistor_core.sch
+.subckt resistor_core IN2 IN1 B
+*.PININFO IN2:B IN1:B B:B
+R2 IN2 IN1 B ppolyf_u W=1e-6 L=20e-6 m=1
+.ends
+.end

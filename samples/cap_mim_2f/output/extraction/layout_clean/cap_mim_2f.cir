@@ -1,0 +1,5 @@
+* Extracted by KLayout with GF180MCU LVS runset on : 16/02/2024 19:01
+
+.SUBCKT cap_mim_2f IN2 IN1
+C$1 IN2 IN1 5e-14 cap_mim_2f0_m4m5_noshield A=25P P=20U
+.ENDS cap_mim_2f

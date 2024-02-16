@@ -16,31 +16,33 @@
 # This is a REFERENCE FILE used to create a specific one per project.
 
 all: print_vars
-_IC_MAKEFILE=.
+_IC_MAKEFILE=$(realpath .)
 include $(_IC_MAKEFILE)/base.mk
 
 
-# User controlable variables
+# User controllable variables
 
 TOP=UNDEFINED
 TEST=UNDEFINED
 
-MODULES= \
-	$(realpath ./samples/inv_sample) \
-	$(realpath ./samples/buffer_sample)
+MODULE_SOURCE_DIR=$(realpath ./samples)
+
+MODULE_CONFIG_FILES=$(word 1, $(MODULE_SOURCE_DIR))
+
+_FIRST_TOP_MODULE_DIR=$(word 1, $(MODULE_SOURCE_DIR))
 
 # Tool configuration files
 
 PDK=gf180mcuD
-XSCHEM_RCFILE=$(realpath ./samples/xschemrc)
-MAGIC_RCFILE=$(realpath ./samples/magicrc)
+XSCHEM_RCFILE=$(realpath $(MODULE_CONFIG_FILES)/xschemrc)
+MAGIC_RCFILE=$(realpath $(MODULE_CONFIG_FILES)/magicrc)
 NETGEN_RCFILE=$(realpath $(PDK_ROOT)/$(PDK)/libs.tech/netgen/setup.tcl)
-NGSPICE_RCDIR=$(realpath ./samples)
-EBC_DIR=$(realpath ./extra_be_checks)
-EBC_UPRJ_ROOT=$(realpath ./samples)
-EBC_CONFIG=$(realpath ./samples/lvs_config.json)
+NGSPICE_RCDIR=$(realpath $(MODULE_CONFIG_FILES))
+EBC_DIR=$(realpath $(_IC_MAKEFILE)/extra_be_checks)
+EBC_UPRJ_ROOT=$(realpath $(MODULE_CONFIG_FILES))
+EBC_CONFIG=$(realpath $(MODULE_CONFIG_FILES)/lvs_config.json)
 
-
+# Documentation
 
 define PARAMETER_ENTRY =
 
@@ -78,6 +80,12 @@ endef
 
 ## Files related with the TOP
 
+MODULES= $(foreach \
+	module, \
+	$(MODULE_SOURCE_DIR), \
+	$(shell find $(module) -maxdepth 1 -mindepth 1 -type d -print) \
+)
+
 ifeq (UNDEFINED,$(TOP))
 
 $(call WARNING_MESSAGE,TOP not defined. Using default values)
@@ -85,20 +93,40 @@ SCH=0_top.sch
 
 else # ifeq (UNDEFINED,$(TOP))
 
-MODULE_DIR=$(filter %/$(TOP),$(MODULES))
+# TOP defined: Define directories
 
-# TODO: This is going to fail when trying to create a new module :(
-ifeq (,$(MODULE_DIR))
-$(call ERROR_MESSAGE,Module "$(TOP)" don't exists or is not registered)
-else
-$(call INFO_MESSAGE,Module "$(TOP)" in directory $(MODULE_DIR))
+MODULE_DIR=$(filter %/$(TOP),$(MODULES))
+ifneq (,$(word 2,$(MODULE_DIR)))
+$(call ERROR_MESSAGE,Multiple modules found $(MODULE_DIR))
 endif
 
-# Base files
+OUTPUT_DIR:=$(abspath $(MODULE_DIR)/output)
+
+GDS_DIR:=$(abspath        $(MODULE_DIR)/layout)
+REPORT_DIR:=$(abspath     $(OUTPUT_DIR)/reports)
+EXTRACTION_DIR:=$(abspath $(OUTPUT_DIR)/extraction)
+
+SCH_DIR:=$(abspath $(EXTRACTION_DIR)/schematic)
+TB_DIR:=$(abspath  $(EXTRACTION_DIR)/test)
+
+# TOP defined: Enforce module structure
+
+ifneq (,$(MODULE_DIR))
+$(call INFO_MESSAGE,Module "$(TOP)" in directory $(MODULE_DIR))
+$(shell mkdir -p $(OUTPUT_DIR))
+$(shell mkdir -p $(REPORT_DIR))
+$(shell mkdir -p $(EXTRACTION_DIR)/schematic)
+$(shell mkdir -p $(EXTRACTION_DIR)/layout_clean)
+$(shell mkdir -p $(EXTRACTION_DIR)/layout_pex)
+$(shell mkdir -p $(TB_DIR))
+endif
+
+# TOP defined: Files
 
 SCH:=$(wildcard $(MODULE_DIR)/symbol/$(TOP).sch)
 SYM:=$(wildcard $(MODULE_DIR)/symbol/$(TOP).sym)
 GDS:=$(wildcard $(MODULE_DIR)/layout/$(TOP).gds)
+GDS_CELL:=$(basename $(notdir $(GDS)))
 TBS:=$(wildcard $(MODULE_DIR)/test/*.sch)
 ifeq (UNDEFINED,$(TEST))
 TB:=$(word 1,$(TBS))
@@ -106,44 +134,15 @@ else
 TB:=$(filter %/$(TEST).sch,$(TBS))
 endif
 
-GDS_CELL:=$(basename $(notdir $(GDS)))
-
-# Directories related with the module
-# Decouple the directory from the file allows having different project structures
-
-GDS_DIR:=$(realpath $(dir $(GDS)))
-OUTPUT_DIR:=$(abspath $(MODULE_DIR)/output)
-
-REPORT_DIR:=$(abspath $(OUTPUT_DIR)/reports)
-EXTRACTION_DIR:=$(abspath $(OUTPUT_DIR)/extraction)
-
-SCH_DIR:=$(abspath $(EXTRACTION_DIR)/schematic)
-TB_DIR:=$(abspath $(EXTRACTION_DIR)/test)
-
-$(shell mkdir -p $(OUTPUT_DIR))
-$(shell mkdir -p $(REPORT_DIR))
-$(shell mkdir -p $(EXTRACTION_DIR)/schematic)
-$(shell mkdir -p $(EXTRACTION_DIR)/layout_clean)
-$(shell mkdir -p $(EXTRACTION_DIR)/layout_pex)
-$(shell mkdir -p $(TB_DIR))
-
-
-# Schematic test netlist
+# TOP defined: Extracted netlists
 
 TB_NETLIST:=$(TB_DIR)/$(basename $(notdir $(TB))).spice
-
-# Schematic clean netlist
 
 SCH_NETLIST_PREFIX:=$(SCH_DIR)/$(TOP)_prefix.spice
 SCH_NETLIST_NOPREFIX:=$(SCH_DIR)/$(TOP)_noprefix.spice
 
-# Layout clean netlist
-
 LAYOUT_NETLIST_KLAYOUT:=$(EXTRACTION_DIR)/layout_clean/$(TOP).cir
 LAYOUT_NETLIST_MAGIC:=$(EXTRACTION_DIR)/layout_clean/$(TOP)_extracted.spice
-
-# Layout netlists with parasitics
-
 LAYOUT_NETLIST_PEX:=$(EXTRACTION_DIR)/layout_pex/$(TOP)_pex.spice
 
 endif # ifeq (UNDEFINED,$(TOP))
@@ -165,7 +164,6 @@ FULL_CLEANABLE:= $(CLEANABLE) \
 	$(foreach module,$(MODULES),$(wildcard $(module)/output/extraction/*/*.raw))
 
 # Logs
-######
 
 TIMESTAMP_DAY=$(shell date +%Y_%m_%d)
 TIMESTAMP_TIME=$(shell date +%H_%M_%S)
@@ -175,6 +173,7 @@ ifeq (,$(wildcard $(LOG_DIR)))
 $(shell mkdir -p $(LOG_DIR))
 endif
 
+# Include modules
 
 include $(_IC_MAKEFILE)/xschem.mk
 include $(_IC_MAKEFILE)/klayout.mk
@@ -191,6 +190,7 @@ MAKE=make TOP=$(TOP) TEST=$(TEST) GND_NAME=$(GND_NAME)
 help:
 	$(call INFO_MESSAGE,$(HELP_ENTRIES))
 	$(call INFO2_MESSAGE,$(PARAMETER_ENTRY))
+
 
 .PHONY: print_vars
 print_vars : \
@@ -225,26 +225,26 @@ magic: magic-edit
 
 .PHONY: create-module
 create-module:
-ifeq (,$(TOP))
+ifeq (UNDEFINED,$(TOP))
 	$(call ERROR_MESSAGE, TOP not defined, couldn't create any design)
 endif
-	mkdir -p $(TOP)/symbol
-	mkdir -p $(TOP)/layout
-	mkdir -p $(TOP)/test
+	mkdir -p $(_FIRST_TOP_MODULE_DIR)/$(TOP)/symbol
+	mkdir -p $(_FIRST_TOP_MODULE_DIR)/$(TOP)/layout
+	mkdir -p $(_FIRST_TOP_MODULE_DIR)/$(TOP)/test
 
-ifneq (,$(wildcard $(TOP)/schematic/$(TOP).sch))
+ifneq (,$(wildcard $(_FIRST_TOP_MODULE_DIR)/$(TOP)/symbol/$(TOP).sch))
 	$(call WARNING_MESSAGE, schematic already exists)
 else
 	xschem --rcfile $(XSCHEM_RCFILE) \
 	--no_x \
 	--quit \
-	--command "xschem clear; xschem saveas $(TOP)/symbol/$(TOP).sch"
+	--command "xschem clear; xschem saveas $(_FIRST_TOP_MODULE_DIR)/$(TOP)/symbol/$(TOP).sch"
 endif
 
-ifneq (,$(wildcard $(TOP)/layout/$(TOP).gds))
+ifneq (,$(wildcard $(_FIRST_TOP_MODULE_DIR)/$(TOP)/layout/$(TOP).gds))
 	$(call WARNING_MESSAGE, layout already exists)
 else
-	klayout -t -e -zz -r $(_IC_MAKEFILE)/empty-gds.py -rd filepath=$(TOP)/layout/$(TOP).gds
+	klayout -t -e -zz -r $(_IC_MAKEFILE)/empty-gds.py -rd filepath=$(_FIRST_TOP_MODULE_DIR)/$(TOP)/layout/$(TOP).gds
 endif
 
 
