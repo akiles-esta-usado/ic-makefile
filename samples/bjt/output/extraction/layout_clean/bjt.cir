@@ -1,6 +1,0 @@
-* Extracted by KLayout with GF180MCU LVS runset on : 16/02/2024 18:58
-
-.SUBCKT bjt C|I1_default_C G|I1_default_B E|I1_default_E
-Q$1 C|I1_default_C G|I1_default_B E|I1_default_E pnp_05p00x05p00 AE=25P PE=20U
-+ AB=41.9904P PB=25.92U AC=41.9904P PC=25.92U NE=1
-.ENDS bjt

@@ -1,7 +1,0 @@
-** sch_path: /workspaces/ic-makefile/samples/inv_sample/symbol/inv_sample.sch
-.subckt inv_sample vdd out in vss
-*.PININFO vdd:B out:B vss:B in:B
-M1 out in vdd vdd pfet_03v3 L=0.28u W=1.26u nf=1 m=1
-M2 out in vss vss nfet_03v3 L=0.28u W=0.42u nf=1 m=1
-.ends
-.end

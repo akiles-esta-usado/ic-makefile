@@ -1,5 +1,0 @@
-* Extracted by KLayout with GF180MCU LVS runset on : 16/02/2024 19:04
-
-.SUBCKT resistor_core B IN1 IN2
-R$1 IN1 IN2 B 7000 ppolyf_u L=20U W=1U
-.ENDS resistor_core

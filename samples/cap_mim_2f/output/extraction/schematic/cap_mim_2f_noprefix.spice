@@ -1,6 +1,0 @@
-** sch_path: /workspaces/ic-makefile/samples/cap_mim_2f/symbol/cap_mim_2f.sch
-.subckt cap_mim_2f IN2 IN1
-*.PININFO IN2:B IN1:B
-C1 IN2 IN1 cap_mim_2f0_m4m5_noshield W=5e-6 L=5e-6 m=1
-.ends
-.end

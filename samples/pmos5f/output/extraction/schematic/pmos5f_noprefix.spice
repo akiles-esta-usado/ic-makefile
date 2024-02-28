@@ -1,6 +1,0 @@
-** sch_path: /workspaces/ic-makefile/samples/pmos5f/symbol/pmos5f.sch
-.subckt pmos5f S D G
-*.PININFO S:B D:B G:B
-M2 D G S S pfet_03v3 L=0.7u W=5u nf=5 m=1
-.ends
-.end

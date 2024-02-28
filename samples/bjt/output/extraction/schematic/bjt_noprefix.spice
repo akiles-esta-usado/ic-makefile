@@ -1,6 +1,0 @@
-** sch_path: /workspaces/ic-makefile/samples/bjt/symbol/bjt.sch
-.subckt bjt C E G
-*.PININFO C:B E:B G:B
-Q1 E G C pnp_05p00x05p00 m=1
-.ends
-.end

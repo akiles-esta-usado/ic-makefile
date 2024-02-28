@@ -51,8 +51,15 @@ endif
 	$(call INFO_MESSAGE, [ngspice] Directory:            $(wildcard $(TB_DIR)))
 	$(call INFO_MESSAGE, [ngspice] Testbench netlist:    $(wildcard $(TB_NETLIST)))
 	$(call INFO_MESSAGE, [ngspice] All testbenchs:       $(wildcard $(TBS)))
+	$(call INFO_MESSAGE, [ngspice] All verilog files:    $(wildcard $(VERILOGS)))
 
 
 .PHONY: ngspice-sim
 ngspice-sim: ngspice-validation xschem-test-netlist
 	cd $(TB_DIR) && $(NGSPICE) $(TB_NETLIST) |& tee $(LOG_NGSPICE)
+
+
+.PHONY: ngspice-compile-verilog
+ngspice-compile-verilog: ngspice-validation
+	mkdir -p $(CODEMODELS_DIR)
+	cd $(CODEMODELS_DIR) && $(NGSPICE) vlnggen $(VERILOG) |& tee $(LOG_NGSPICE)

@@ -73,7 +73,7 @@ endif
 
 
 .PHONY: netgen-lvs-magic
-netgen-lvs-magic: netgen-validation magic-lvs-extraction xschem-netlist-lvs-prefix
+netgen-lvs-magic: netgen-validation xschem-netlist-lvs-prefix magic-lvs-extraction
 	cd $(GDS_DIR) && $(NETGEN_LVS_WITH_MAGIC) |& tee $(LOG_NETGEN) || true
 	mv $(GDS_DIR)/comp.out $(NETGEN_LVS_REPORT_MAGIC)
 	@echo Created $(NETGEN_LVS_REPORT_MAGIC)

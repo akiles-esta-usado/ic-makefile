@@ -56,3 +56,32 @@ inv_sample
         ├── lvs_klayout_comp.out         LVS files from netgen
         └── lvs_magic_comp.out
 ~~~
+
+## Usage
+
+This commands may not be up-to-date. 
+
+Get the help description of each tool makefile. Each makefile should extend the `HELP_ENTRIES` variable to register rules and usage.
+
+~~~bash
+$ make help
+~~~
+
+Open a specific xschem testbench
+
+~~~bash
+$ make TOP=inv_sample TEST=inv_sample_test xschem-tb
+~~~
+
+To perform Layout versus Schematic on two designs: `inv_sample` and `nmos5f`.
+
+~~~bash
+$ make TOP=inv_sample GND_NAME=vss klayout-lvs
+$ make TOP=nmos5f GND_NAME=S klayout-lvs
+~~~
+
+Perform extraction with parasitics (PEX) from the layout of `inv_sample`.
+
+~~~bash
+$ make TOP=inv_sample magic-pex-extraction
+~~~

@@ -113,7 +113,7 @@ xschem-netlist-lvs-prefix: xschem-validation
 	$(XSCHEM_BATCH) \
 	 	--netlist_path $(SCH_DIR) \
 		--netlist_filename $(notdir $(SCH_NETLIST_PREFIX)) \
-		--preinit 'set lvs_netlist 1' \
+		--preinit 'set lvs_netlist 1; set spiceprefix 1' \
 		$(SCH) |& tee $(LOG_XSCHEM_NETLIST_PREFIX)
 
 

@@ -59,6 +59,12 @@ define PRINT_LIST =
 	$(shell echo $(1) | tr " " "\t")
 endef
 
+define PARAMETER_ENTRY +=
+endef
+
+define HELP_ENTRIES +=
+endef
+
 
 test-colors:
 	@echo -e "$(COLOR_BLACK) hola_0 $(COLOR_END)"
@@ -77,6 +83,12 @@ clean:
 
 full-clean:
 	$(RM) $(FULL_CLEANABLE)
+
+
+.PHONY: help
+help:
+	$(call INFO_MESSAGE,$(HELP_ENTRIES))
+	$(call INFO2_MESSAGE,$(PARAMETER_ENTRY))
 
 
 # https://www.cmcrossroads.com/article/printing-value-makefile-variable

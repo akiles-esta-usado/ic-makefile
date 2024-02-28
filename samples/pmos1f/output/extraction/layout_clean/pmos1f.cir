@@ -1,5 +1,0 @@
-* Extracted by KLayout with GF180MCU LVS runset on : 16/02/2024 19:01
-
-.SUBCKT pmos1f B D S G
-M$1 S G D B pfet_03v3 L=0.28U W=0.42U AS=0.2822P AD=0.2822P PS=2.18U PD=2.18U
-.ENDS pmos1f
