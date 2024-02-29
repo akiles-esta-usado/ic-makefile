@@ -38,6 +38,9 @@ LOG_KLAYOUT_DRC_PRECHECK=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_drc_precheck_$(TOP
 ALL_LYRDB:=$(filter %.lyrdb,$(wildcard $(REPORT_DIR)/*))
 ALL_LVSDB:=$(filter %.lvsdb,$(wildcard $(REPORT_DIR)/*))
 
+PADRING_FILE:=$(wildcard $(GDS_DIR)/*.yaml) \
+	$(wildcard $(GDS_DIR)/*.yml)
+
 
 KLAYOUT=klayout -t
 
@@ -217,3 +220,12 @@ klayout-drc: klayout-drc-only
 
 .PHONY: klayout-eval
 klayout-eval: klayout-drc-only klayout-lvs-only
+
+
+.PHONY: klayout-padring
+klayout-padring: klayout-validation
+	$(KLAYOUT) -t -e -rr $(_IC_MAKEFILE)/scripts/padring.py \
+		-rd padring_file=$(PADRING_FILE) \
+		$(GDS)
+
+	#python $(_IC_MAKEFILE)/scripts/padring.py $(PADRING_FILE)
