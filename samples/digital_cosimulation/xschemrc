@@ -1,17 +1,19 @@
 source $env(PDK_ROOT)/$env(PDK)/libs.tech/xschem/xschemrc
 
-foreach module [ glob -nocomplain -type d ./* ] {
-    set module_sch_sym {}
+proc append_modules { path } {
+    global XSCHEM_LIBRARY_PATH
 
-    append module_sch_sym [ glob -nocomplain $module/symbol/*.sch ]
-    append module_sch_sym [ glob -nocomplain $module/symbol/*.sym ]
-    
-    if { [ llength $module_sch_sym ] > 0 } {
-        append XSCHEM_LIBRARY_PATH :[file normalize $module]
+    foreach module [ glob -nocomplain -type d $path ] {
+        set module_sch_sym {}
+
+        append module_sch_sym [ glob -nocomplain $module/symbol/*.sch ]
+        append module_sch_sym [ glob -nocomplain $module/symbol/*.sym ]
+        
+        if { [ llength $module_sch_sym ] > 0 } {
+            append XSCHEM_LIBRARY_PATH :[file normalize $module]
+        }
     }
 }
-
-set XSCHEM_START_WINDOW {0_top.sch}
 
 
 proc create_empty_sch { filename } {
@@ -49,5 +51,9 @@ proc startup_information { } {
     puts "The spice is generated on \$module/output/extraction/test/"
     puts "When doing pex simulations, use relative references from there"
 }
+
+set XSCHEM_START_WINDOW {0_top.sch}
+
+append_modules ./*
 
 startup_information
