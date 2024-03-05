@@ -102,6 +102,11 @@ xschem-sym: xschem-validation
 	$(XSCHEM) --netlist_path $(SCH_DIR) $(SYM) |& tee $(LOG_XSCHEM)
 
 
+.PHONY: xschem-netlist
+xschem-netlist: xschem-validation
+	$(XSCHEM_BATCH) --netlist_path $(SCH_DIR) $(SCH) |& tee $(LOG_XSCHEM_NETLIST)
+
+
 .PHONY: xschem-test-netlist
 xschem-test-netlist: xschem-validation
 	$(XSCHEM_BATCH) --netlist_path $(TB_DIR) $(TB) |& tee $(LOG_XSCHEM_NETLIST)
