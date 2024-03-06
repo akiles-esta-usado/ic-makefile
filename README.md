@@ -21,18 +21,18 @@ $ git submodule add https://github.com/akiles-esta-usado/ic-makefile.git
 
 ## Project Structure
 
-Each design is a module and it contains layouts, schematics and testbench. The enforced structure is the following:
+Each design is a module and it contains layouts, schematics and testbench. The proposed structure is the following:
 
 ~~~
 inv_sample
-├── symbol
+├── symbol                                  Schematic and symbols
 │   ├── inv_sample.sch
 │   └── inv_sample.sym
-├── test
+├── test                                    Different testbenchs for the device
 │   ├── inv_sample_test.sch
 │   └── inv_sample_test.spice
-├── layout
-│   ├── inv_sample.gds
+├── layout                                  GDS or MAG files
+│   └── inv_sample.gds
 └── output
     ├── extraction
     │   ├── layout_clean                    
@@ -85,3 +85,25 @@ Perform extraction with parasitics (PEX) from the layout of `inv_sample`.
 ~~~bash
 $ make TOP=inv_sample magic-pex-extraction
 ~~~
+
+## Recommended Content
+
+### Harald Pretl: Circuit Designers Etiquette
+
+[Link](https://github.com/iic-jku/Circuit-Designers-Etiquette)
+
+A consistent working style, naming, schematic drawing and coding scheme on a project will increase productivity, avoid errors and improves reusability.
+
+## Blog: Circuit Artists
+
+[Link](https://circuit-artists.com)
+
+This is a blog that makes recommendations on IC design and share pro-tips.
+
+I find this post about [testbench reusability](https://circuit-artists.com/testbench-templates-how-to-reuse-and-boost-simulation-efficiency/), maybe it will be useful.
+
+## B.Razabi: The Analog Mind
+
+[Link](http://www.seas.ucla.edu/brweb/journal.html)
+
+Contains design guidelines for analog blocks like LDOs, OTAs, etc.

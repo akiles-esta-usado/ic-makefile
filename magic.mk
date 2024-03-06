@@ -49,6 +49,8 @@ drc off
 gds drccheck off
 $(MAGIC_ROUTINE_LOAD)
 
+cellname rename $(GDS_CELL) $(GDS_CELL)_clean
+
 extract
 ext2spice lvs
 ext2spice -o "$(LAYOUT_NETLIST_MAGIC)"
@@ -131,3 +133,6 @@ magic-pex-extraction: magic-validation
 	cd $(GDS_DIR) && $(MAGIC_BATCH) <<EOF |& tee $(LOG_MAGIC_PEX)
 	$(MAGIC_ROUTINE_PEX)
 	EOF
+
+
+# PEASE READ THIS: https://github.com/mattvenn/magic_challenge/tree/main/mag/tcl

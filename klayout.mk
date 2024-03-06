@@ -35,6 +35,9 @@ LOG_KLAYOUT_DRC_EFABLES=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_drc_efabless_$(TOP)
 LOG_KLAYOUT_DRC_PRECHECK=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_drc_precheck_$(TOP).log
 
 
+LOG_KLAYOUT=$(LOG_DIR)/$(TIMESTAMP_TIME)_$(TOP)_klayout
+
+
 ALL_LYRDB:=$(filter %.lyrdb,$(wildcard $(REPORT_DIR)/*))
 ALL_LVSDB:=$(filter %.lvsdb,$(wildcard $(REPORT_DIR)/*))
 
@@ -83,6 +86,7 @@ ifeq (,$(wildcard $(SCH_NETLIST_NOPREFIX)))
 else
 	$(call INFO_MESSAGE, [klayout] schematic netlist: $(SCH_NETLIST_NOPREFIX))
 endif
+	$(call INFO_MESSAGE, [klayout] padring yaml:      $(wildcard $(PADRING_FILE)))
 	$(call INFO_MESSAGE, [klayout] gds netlist:       $(wildcard $(LAYOUT_NETLIST_KLAYOUT)))
 	$(call INFO_MESSAGE, [klayout] DRC reports:       $(ALL_LYRDB))
 	$(call INFO_MESSAGE, [klayout] LVS reports:       $(ALL_LVSDB))
@@ -93,12 +97,12 @@ endif
 
 .PHONY: klayout-view
 klayout-view: klayout-validation
-	$(KLAYOUT) -ne $(GDS) |& tee $(LOG_KLAYOUT)
+	$(KLAYOUT) -ne $(GDS) |& tee $(LOG_KLAYOUT)_view.log
 
 
 .PHONY: klayout-edit
 klayout-edit: klayout-validation
-	$(KLAYOUT) -e $(GDS) |& tee $(LOG_KLAYOUT)
+	$(KLAYOUT) -e $(GDS) |& tee $(LOG_KLAYOUT)_edit.log
 
 
 # LVS RULES
@@ -180,42 +184,84 @@ else
 endif
 
 
-.PHONY: klayout-drc-only
-klayout-drc-only: klayout-validation
-	$(RM) $(REPORT_DIR)/*.lyrdb
-
-	python $(KLAYOUT_HOME)/drc/run_drc.py \
-		--path $(GDS) \
+KLAYOUT_SCRIPT_DRC_PDK:=python $(KLAYOUT_HOME)/drc/run_drc.py \
 		--variant=D \
+		--path $(GDS) \
 		--topcell=$(GDS_CELL) \
 		--run_dir=$(REPORT_DIR) \
 		--run_mode=flat \
 		--antenna \
 		--density \
 		--thr=$(NPROCS) \
-		--verbose |& tee $(LOG_KLAYOUT_DRC_EFABLES) || true
+		--verbose
 
-	$(KLAYOUT) -b -r $(KLAYOUT_HOME)/drc/gf180mcuD_mr.drc \
+
+.PHONY: klayout-drc-efabless
+klayout-drc-efabless: klayout-validation
+	$(KLAYOUT_SCRIPT_DRC_PDK) \
+	|& tee $(LOG_KLAYOUT)_drc_efabless.log || true
+
+
+# -rd input
+# -rd topcell
+# -rd report
+# -rd table_name
+# -rd conn_drc
+# -rd split_deep
+# -rd wedge
+# -rd ball
+# -rd gold
+# -rd mim_option
+# -rd offgrid
+# -rd thr
+# -rd verbose
+# -rd run_mode
+# -rd metal_top
+# -rd metal_level
+# -rd feol
+# -rd beol
+# -rd slow_via
+KLAYOUT_SCRIPT_DRC_PRECHECK:=$(KLAYOUT) -b -r $(KLAYOUT_HOME)/drc/gf180mcuD_mr.drc \
+		-rd mim_option=B \
+		-rd run_mode=flat \
+		-rd verbose=true \
 		-rd input=$(GDS) \
 		-rd topcell=$(GDS_CELL) \
-		-rd report=$(REPORT_DIR)/precheck_$(TOP).lyrdb \
 		-rd thr=$(NPROCS) \
 		-rd conn_drc=true \
 		-rd split_deep=true \
 		-rd wedge=true \
 		-rd ball=true \
 		-rd gold=true \
-		-rd mim_option=B \
-		-rd offgrid=true \
-		-rd verbose=true \
-		-rd run_mode=flat \
+		-rd offgrid=true
+
+
+.PHONY: klayout-drc-precheck
+klayout-drc-precheck:
+	$(KLAYOUT_SCRIPT_DRC_PRECHECK) \
+		-rd report=$(REPORT_DIR)/precheck_beol_$(TOP).lyrdb \
+		-rd beol=true \
+		-rd feol=false \
+		|& tee $(LOG_KLAYOUT)_drc_precheck_beol.log || true
+
+	$(KLAYOUT_SCRIPT_DRC_PRECHECK) \
+		-rd report=$(REPORT_DIR)/precheck_feol_$(TOP).lyrdb \
+		-rd beol=false \
 		-rd feol=true \
-		-rd beol=true |& tee $(LOG_KLAYOUT_DRC_PRECHECK) || true
+		|& tee $(LOG_KLAYOUT)_drc_precheck_feol.log || true
+
+
+.PHONY: klayout-drc-only
+klayout-drc-only: klayout-validation
+	$(RM) $(REPORT_DIR)/*.lyrdb
+
+	$(MAKE) klayout-drc-efabless
+	$(MAKE) klayout-drc-precheck
 
 
 .PHONY: klayout-drc
 klayout-drc: klayout-drc-only
-	make TOP=$(TOP) klayout-drc-view
+	$(MAKE) klayout-drc-view
 
 
 .PHONY: klayout-eval
