@@ -35,11 +35,19 @@ LOG_KLAYOUT_DRC_EFABLES=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_drc_efabless_$(TOP)
 LOG_KLAYOUT_DRC_PRECHECK=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_drc_precheck_$(TOP).log
 
 
+LOG_KLAYOUT=$(LOG_DIR)/$(TIMESTAMP_TIME)_$(TOP)_klayout
+
+
 ALL_LYRDB:=$(filter %.lyrdb,$(wildcard $(REPORT_DIR)/*))
 ALL_LVSDB:=$(filter %.lvsdb,$(wildcard $(REPORT_DIR)/*))
 
 
+ifneq (,$(wildcard $(KLAYOUT_RCFILE)))
+KLAYOUT=klayout -c $(KLAYOUT_RCFILE) -t
+else
+$(call WARNING_MESSAGE, klayoutrc not found)
 KLAYOUT=klayout -t
+endif
 
 define HELP_ENTRIES +=
 
@@ -80,6 +88,7 @@ ifeq (,$(wildcard $(SCH_NETLIST_NOPREFIX)))
 else
 	$(call INFO_MESSAGE, [klayout] schematic netlist: $(SCH_NETLIST_NOPREFIX))
 endif
+	$(call INFO_MESSAGE, [klayout] klayoutrc:         $(wildcard $(KLAYOUT_RCFILE)))
 	$(call INFO_MESSAGE, [klayout] gds netlist:       $(wildcard $(LAYOUT_NETLIST_KLAYOUT)))
 	$(call INFO_MESSAGE, [klayout] DRC reports:       $(ALL_LYRDB))
 	$(call INFO_MESSAGE, [klayout] LVS reports:       $(ALL_LVSDB))
@@ -90,12 +99,12 @@ endif
 
 .PHONY: klayout-view
 klayout-view: klayout-validation
-	$(KLAYOUT) -ne $(GDS) |& tee $(LOG_KLAYOUT)
+	$(KLAYOUT) -ne $(GDS) |& tee $(LOG_KLAYOUT)_view.log
 
 
 .PHONY: klayout-edit
 klayout-edit: klayout-validation
-	$(KLAYOUT) -e $(GDS) |& tee $(LOG_KLAYOUT)
+	$(KLAYOUT) -e $(GDS) |& tee $(LOG_KLAYOUT)_edit.log
 
 
 .PHONY: klayout-lvs-view
@@ -195,7 +204,7 @@ klayout-drc-only: klayout-validation
 
 .PHONY: klayout-drc
 klayout-drc: klayout-drc-only
-	make TOP=$(TOP) klayout-drc-view
+	$(MAKE) klayout-drc-view
 
 
 .PHONY: klayout-eval

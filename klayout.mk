@@ -44,8 +44,12 @@ ALL_LVSDB:=$(filter %.lvsdb,$(wildcard $(REPORT_DIR)/*))
 PADRING_FILE:=$(wildcard $(GDS_DIR)/*.yaml) \
 	$(wildcard $(GDS_DIR)/*.yml)
 
-
+ifneq (,$(wildcard $(KLAYOUT_RCFILE)))
+KLAYOUT=klayout -c $(KLAYOUT_RCFILE) -t
+else
+$(call WARNING_MESSAGE, klayoutrc not found)
 KLAYOUT=klayout -t
+endif
 
 define HELP_ENTRIES +=
 
@@ -86,6 +90,7 @@ ifeq (,$(wildcard $(SCH_NETLIST_NOPREFIX)))
 else
 	$(call INFO_MESSAGE, [klayout] schematic netlist: $(SCH_NETLIST_NOPREFIX))
 endif
+	$(call INFO_MESSAGE, [klayout] klayoutrc:         $(wildcard $(KLAYOUT_RCFILE)))
 	$(call INFO_MESSAGE, [klayout] padring yaml:      $(wildcard $(PADRING_FILE)))
 	$(call INFO_MESSAGE, [klayout] gds netlist:       $(wildcard $(LAYOUT_NETLIST_KLAYOUT)))
 	$(call INFO_MESSAGE, [klayout] DRC reports:       $(ALL_LYRDB))
@@ -221,19 +226,20 @@ klayout-drc-efabless: klayout-validation
 # -rd feol
 # -rd beol
 # -rd slow_via
-KLAYOUT_SCRIPT_DRC_PRECHECK:=$(KLAYOUT) -b -r $(KLAYOUT_HOME)/drc/gf180mcuD_mr.drc \
-		-rd mim_option=B \
-		-rd run_mode=flat \
-		-rd verbose=true \
-		-rd input=$(GDS) \
-		-rd topcell=$(GDS_CELL) \
-		-rd thr=$(NPROCS) \
-		-rd conn_drc=true \
-		-rd split_deep=true \
-		-rd wedge=true \
-		-rd ball=true \
-		-rd gold=true \
-		-rd offgrid=true
+KLAYOUT_SCRIPT_DRC_PRECHECK:=$(KLAYOUT) -b \
+	-r $(KLAYOUT_HOME)/drc/gf180mcuD_mr.drc \
+	-rd mim_option=B \
+	-rd run_mode=flat \
+	-rd verbose=true \
+	-rd input=$(GDS) \
+	-rd topcell=$(GDS_CELL) \
+	-rd thr=$(NPROCS) \
+	-rd conn_drc=true \
+	-rd split_deep=true \
+	-rd wedge=true \
+	-rd ball=true \
+	-rd gold=true \
+	-rd offgrid=true
 
 
 .PHONY: klayout-drc-precheck

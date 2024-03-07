@@ -54,6 +54,7 @@ EBC_CONFIG=$(realpath $(MODULE_CONFIG_FILES)/lvs_config.json)
 
 ## KLAYOUT
 KLAYOUT_HOME=$(PDK_ROOT)/$(PDK)/libs.tech/klayout
+KLAYOUT_RCFILE=$(realpath $(MODULE_CONFIG_FILES)/klayoutrc)
 
 # Documentation
 
@@ -164,7 +165,7 @@ SCH_NETLIST_PREFIX:=$(SCH_DIR)/$(TOP)_prefix.spice
 SCH_NETLIST_NOPREFIX:=$(SCH_DIR)/$(TOP)_noprefix.spice
 
 LAYOUT_NETLIST_KLAYOUT:=$(EXTRACTION_DIR)/layout_clean/$(TOP).cir
-LAYOUT_NETLIST_MAGIC:=$(EXTRACTION_DIR)/layout_clean/$(TOP)_extracted.spice
+LAYOUT_NETLIST_MAGIC:=$(EXTRACTION_DIR)/layout_clean/$(TOP)_clean.spice
 LAYOUT_NETLIST_PEX:=$(EXTRACTION_DIR)/layout_pex/$(TOP)_pex.spice
 
 endif # ifeq (UNDEFINED,$(TOP))

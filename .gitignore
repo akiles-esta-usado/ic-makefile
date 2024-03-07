@@ -164,3 +164,4 @@ programs/*
 **/ebc/*
 xschem
 **/output
+**/.vscode
