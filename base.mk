@@ -95,8 +95,16 @@ help:
 # https://stackoverflow.com/questions/16467718/how-to-print-out-a-variable-in-makefile
 #print_% : ; $(info $*: $(flavor $*) variable - $($*)) @true
 #print_% : ; $(call INFO_MESSAGE,$*:$(TERM_TAB)$(TERM_SMUL)$(flavor $*)$(TERM_RMUL)$(TERM_TAB)$($*)) @true
-print_% : ; $(call INFO_MESSAGE,$*:$(TERM_TAB)$(TERM_SMUL)$(flavor $*)$(TERM_RMUL)$(TERM_TAB)$(call PRINT_LIST,$($*))) @true
+print_% : ; $(call INFO_MESSAGE,$*:$(TERM_TAB)$(TERM_SMUL)$(flavor $*)$(TERM_RMUL)$(TERM_TAB)$(call PRINT_LIST,$(wildcard $($*)))) @true
+print_raw_% : ; $(call INFO_MESSAGE,$*:$(TERM_TAB)$(TERM_SMUL)$(flavor $*)$(TERM_RMUL)$(TERM_TAB)$(call PRINT_LIST,$($*))) @true
 
 
 print_sorted_%:
 	$(MAKE) print_$* | tr "\t" "\n"
+
+# https://www.gnu.org/software/make/manual/html_node/Call-Function.html
+map = $(foreach val,$(2),$(call $(1),$(val)))
+# $(call map,func,val)
+# $(1):   function name
+# $(2):   list of values
+# $(val): each one is evaluated with $(1)

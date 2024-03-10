@@ -82,13 +82,13 @@ klayout-validation:
 ifeq (,$(wildcard $(GDS)))
 	$(call ERROR_MESSAGE, [klayout] GDS file $(GDS) doesn't exist$)
 endif	
-	$(call INFO_MESSAGE, [klayout] GDS:               $(GDS))
-	$(call INFO_MESSAGE, [klayout] directory:         $(GDS_DIR))
+	$(call INFO_MESSAGE, [klayout] GDS:               $(wildcard $(GDS)))
+	$(call INFO_MESSAGE, [klayout] directory:         $(wildcard $(GDS_DIR)))
 
 ifeq (,$(wildcard $(SCH_NETLIST_NOPREFIX)))
 	$(call WARNING_MESSAGE, [klayout] Schematic netlist doesn't exist$)
 else
-	$(call INFO_MESSAGE, [klayout] schematic netlist: $(SCH_NETLIST_NOPREFIX))
+	$(call INFO_MESSAGE, [klayout] schematic netlist: $(wildcard $(SCH_NETLIST_NOPREFIX)))
 endif
 	$(call INFO_MESSAGE, [klayout] klayoutrc:         $(wildcard $(KLAYOUT_RCFILE)))
 	$(call INFO_MESSAGE, [klayout] padring yaml:      $(wildcard $(PADRING_FILE)))
@@ -126,14 +126,14 @@ klayout-edit: klayout-validation
 # --schematic_simplify                Enable schematic simplification in input netlist.
 
 ## Operations in extracted netlist
-# --no_net_names                      In extracted netlist Discard net names.
-# --spice_comments                    In extracted netlist Enable netlist comments.
-# --scale                             In extracted netlist Enable scale of 1e6.
-# --net_only                          In extracted netlist Enable netlist object creation only.
-# --top_lvl_pins                      In extracted netlist Enable top level pins only.
-# --combine                           In extracted netlist Enable netlist combine only.
-# --purge                             In extracted netlist Enable netlist purge all only.
-# --purge_nets                        In extracted netlist Enable netlist purge nets only.
+# --no_net_names                      In extracted netlist discard net names, only enumerated nets.
+# --spice_comments                    In extracted netlist enable netlist comments. Useful at least to know pins
+# --scale                             In extracted netlist enable scale of 1e6.
+# --net_only                          In extracted netlist enable netlist object creation only. ?
+# --top_lvl_pins                      In extracted netlist enable top level pins only.
+# --combine                           In extracted netlist enable netlist combine only.
+# --purge                             In extracted netlist enable netlist purge all only.
+# --purge_nets                        In extracted netlist enable netlist purge nets only.
 
 
 .PHONY: klayout-lvs-help
@@ -164,9 +164,11 @@ klayout-lvs-only: klayout-validation xschem-netlist-lvs-noprefix-fixed
 		--run_dir=$(REPORT_DIR) \
 		--layout=$(GDS) \
 		--netlist=$(SCH_NETLIST_NOPREFIX) \
+		--topcell=$(GDS_CELL) \
 		--top_lvl_pins \
 		--schematic_simplify \
-		--combine |& tee $(LOG_KLAYOUT_LVS) || true
+		--combine \
+		|& tee $(LOG_KLAYOUT_LVS) || true
 
 	mv $(REPORT_DIR)/*.cir $(LAYOUT_NETLIST_KLAYOUT)
 
@@ -279,5 +281,3 @@ klayout-padring: klayout-validation
 	$(KLAYOUT) -t -e -rr $(_IC_MAKEFILE)/scripts/padring.py \
 		-rd padring_file=$(PADRING_FILE) \
 		$(GDS)
-
-	#python $(_IC_MAKEFILE)/scripts/padring.py $(PADRING_FILE)
