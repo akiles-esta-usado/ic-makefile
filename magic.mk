@@ -25,15 +25,27 @@ LOG_MAGIC_PEX=$(LOG_DIR)/$(TIMESTAMP_TIME)_magic_pex_$(TOP).log
 MAGIC=magic -rcfile $(MAGIC_RCFILE) -noconsole
 MAGIC_BATCH=$(MAGIC) -nowindow -dnull
 
+# Defining Flatglob
+ifeq (sky130A,$(PDK))
+define FLATGLOB =
+gds flatglob *sky130_fd_pr__*[A-Z]*
+gds flatglob *res_poly*
+endef
+else ifeq (gf180mcuD,$(PDK))
+define FLATGLOB =
+gds flatglob pmos*
+gds flatglob via*
+gds flatglob compass*
+gds flatglob rectangle*
+endef
+endif
+
 define MAGIC_ROUTINE_LOAD =
 gds rescale false
 
 gds flatten yes
 
-gds flatglob pmos*
-gds flatglob via*
-gds flatglob compass*
-gds flatglob rectangle*
+$(FLATGLOB)
 
 gds read $(GDS)
 load $(GDS_CELL)
