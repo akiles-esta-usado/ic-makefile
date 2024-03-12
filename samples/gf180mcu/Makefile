@@ -34,6 +34,7 @@ _FIRST_TOP_MODULE_DIR=$(word 1, $(MODULE_SOURCE_DIR))
 # Tool configuration files
 
 PDK=gf180mcuD
+PYTHON=python
 
 ## XSCHEM
 XSCHEM_RCFILE=$(realpath $(MODULE_CONFIG_FILES)/xschemrc)
@@ -54,6 +55,7 @@ EBC_CONFIG=$(realpath $(MODULE_CONFIG_FILES)/lvs_config.json)
 
 ## KLAYOUT
 KLAYOUT_HOME=$(PDK_ROOT)/$(PDK)/libs.tech/klayout
+KLAYOUT_RCFILE=$(realpath $(MODULE_CONFIG_FILES)/klayoutrc)
 
 # Documentation
 
@@ -164,7 +166,7 @@ SCH_NETLIST_PREFIX:=$(SCH_DIR)/$(TOP)_prefix.spice
 SCH_NETLIST_NOPREFIX:=$(SCH_DIR)/$(TOP)_noprefix.spice
 
 LAYOUT_NETLIST_KLAYOUT:=$(EXTRACTION_DIR)/layout_clean/$(TOP).cir
-LAYOUT_NETLIST_MAGIC:=$(EXTRACTION_DIR)/layout_clean/$(TOP)_extracted.spice
+LAYOUT_NETLIST_MAGIC:=$(EXTRACTION_DIR)/layout_clean/$(TOP)_clean.spice
 LAYOUT_NETLIST_PEX:=$(EXTRACTION_DIR)/layout_pex/$(TOP)_pex.spice
 
 endif # ifeq (UNDEFINED,$(TOP))
@@ -316,3 +318,62 @@ lvs:
 
 pex:
 	$(MAKE) magic-pex-extraction
+
+
+.PHONY: validate-sample
+validate-sample:
+	make TOP=bjt           magic-drc
+	make TOP=cap_mim_2f    magic-drc
+	make TOP=inv_sample    magic-drc
+	make TOP=nmos5f        magic-drc
+	make TOP=pmos1f        magic-drc
+	make TOP=pmos5f        magic-drc
+	make TOP=resistor_core magic-drc
+
+	make TOP=bjt           klayout-drc-only
+	make TOP=cap_mim_2f    klayout-drc-only
+	make TOP=inv_sample    klayout-drc-only
+	make TOP=nmos5f        klayout-drc-only
+	make TOP=pmos1f        klayout-drc-only
+	make TOP=pmos5f        klayout-drc-only
+	make TOP=resistor_core klayout-drc-only
+
+	make TOP=bjt           GND_NAME=G   klayout-lvs-only
+	make TOP=cap_mim_2f                 klayout-lvs-only
+	make TOP=inv_sample    GND_NAME=vss klayout-lvs-only
+	make TOP=nmos5f        GND_NAME=S   klayout-lvs-only
+	make TOP=pmos1f        GND_NAME=D   klayout-lvs-only
+	make TOP=pmos5f        GND_NAME=D   klayout-lvs-only
+	make TOP=resistor_core GND_NAME=B   klayout-lvs-only
+
+	make TOP=bjt           netgen-lvs-magic # BJT extraction comes with recursive lock
+	make TOP=cap_mim_2f    netgen-lvs-magic # It ignores the name of the cell
+	make TOP=inv_sample    netgen-lvs-magic # Circuits match uniquely.
+	make TOP=nmos5f        netgen-lvs-magic # Circuits match uniquely.
+	make TOP=pmos1f        netgen-lvs-magic # Cannot find cell pmos1f_clean. Cell pfet$1 has no pins
+	make TOP=pmos5f        netgen-lvs-magic # Cannot find cell pmos5f_clean. Cell pfet$1 has no pins
+	make TOP=resistor_core netgen-lvs-magic # Circuits match uniquely.
+
+	make TOP=bjt           netgen-lvs-klayout # Failed pin matching, bjt with property errors
+	make TOP=cap_mim_2f    netgen-lvs-klayout # Circuits match uniquely. Property errors were found (expected).
+	make TOP=inv_sample    netgen-lvs-klayout # Circuits match uniquely.
+	make TOP=nmos5f        netgen-lvs-klayout # Circuits match uniquely.
+	make TOP=pmos1f        netgen-lvs-klayout # Circuits match uniquely.
+	make TOP=pmos5f        netgen-lvs-klayout # Circuits match uniquely.
+	make TOP=resistor_core netgen-lvs-klayout # Circuits match uniquely. Property errors were found.
+
+	make TOP=bjt           klayout-drc-view
+	make TOP=cap_mim_2f    klayout-drc-view
+	make TOP=inv_sample    klayout-drc-view
+	make TOP=nmos5f        klayout-drc-view
+	make TOP=pmos1f        klayout-drc-view
+	make TOP=pmos5f        klayout-drc-view
+	make TOP=resistor_core klayout-drc-view
+
+	make TOP=bjt           klayout-lvs-view
+	make TOP=cap_mim_2f    klayout-lvs-view
+	make TOP=inv_sample    klayout-lvs-view
+	make TOP=nmos5f        klayout-lvs-view
+	make TOP=pmos1f        klayout-lvs-view
+	make TOP=pmos5f        klayout-lvs-view
+	make TOP=resistor_core klayout-lvs-view

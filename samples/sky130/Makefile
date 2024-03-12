@@ -34,6 +34,7 @@ _FIRST_TOP_MODULE_DIR=$(word 1, $(MODULE_SOURCE_DIR))
 # Tool configuration files
 
 PDK=sky130A
+PYTHON=python
 
 ## XSCHEM
 XSCHEM_RCFILE=$(realpath $(MODULE_CONFIG_FILES)/xschemrc)
@@ -193,7 +194,7 @@ endif
 # Include modules
 
 include $(_IC_MAKEFILE)/xschem.mk
-include $(_IC_MAKEFILE)/klayout_sky130.mk
+include $(_IC_MAKEFILE)/klayout.mk
 include $(_IC_MAKEFILE)/magic.mk
 include $(_IC_MAKEFILE)/netgen.mk
 include $(_IC_MAKEFILE)/ngspice.mk
@@ -317,3 +318,30 @@ lvs:
 
 pex:
 	$(MAKE) magic-pex-extraction
+
+
+.PHONY: validate-sample
+validate-sample:
+	make TOP=nmos             magic-drc # No errors found.
+	make TOP=capmim_m3_1      magic-drc # No errors found.
+	make TOP=capmim_m3_2      magic-drc # No errors found.
+	make TOP=resistor_poly    magic-drc # No errors found.
+	make TOP=resistor_poly_hi magic-drc # No errors found.
+
+	make TOP=nmos             klayout-drc-only # 0 Errors
+	make TOP=capmim_m3_1      klayout-drc-only # 0 Errors
+	make TOP=capmim_m3_2      klayout-drc-only # 0 Errors
+	make TOP=resistor_poly    klayout-drc-only # 0 Errors
+	make TOP=resistor_poly_hi klayout-drc-only # 0 Errors
+
+	make TOP=nmos             netgen-lvs-magic # Circuits match uniquely.
+	make TOP=capmim_m3_1      netgen-lvs-magic # Circuits match uniquely.
+	make TOP=capmim_m3_2      netgen-lvs-magic # Circuits match uniquely.
+	make TOP=resistor_poly    netgen-lvs-magic # Circuits match uniquely.
+	make TOP=resistor_poly_hi netgen-lvs-magic # Circuits match uniquely. Property errors were found.
+
+	make TOP=nmos             klayout-drc-view
+	make TOP=capmim_m3_1      klayout-drc-view
+	make TOP=capmim_m3_2      klayout-drc-view
+	make TOP=resistor_poly    klayout-drc-view
+	make TOP=resistor_poly_hi klayout-drc-view

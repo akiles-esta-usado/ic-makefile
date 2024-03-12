@@ -40,6 +40,7 @@ gds flatglob rectangle*
 endef
 endif
 
+
 define MAGIC_ROUTINE_LOAD =
 gds rescale false
 
@@ -56,6 +57,29 @@ readspice $(SCH_NETLIST_NOPREFIX)
 puts "layout loaded :)"
 endef
 
+MAGIC_REPORT_DRC=$(REPORT_DIR)/magic_drc.log
+define MAGIC_ROUTINE_DRC =
+$(MAGIC_ROUTINE_LOAD)
+select top cell
+drc euclidean on
+drc style drc(full)
+drc check
+
+# Redirect output to report file. Logs will die :c
+puts "Magic DRC report will be on $(MAGIC_REPORT_DRC)"
+close stdout
+open $(MAGIC_REPORT_DRC) w
+
+drc listall why
+
+close stdout
+quit -noprompt
+endef
+# Write into drc report file
+# puts $$fp [ drc check ]
+# puts $$fp [ set drcresult [drc listall why] ]
+
+
 define MAGIC_ROUTINE_LVS =
 drc off
 gds drccheck off
@@ -70,6 +94,7 @@ ext2spice -o "$(LAYOUT_NETLIST_MAGIC)"
 puts "Created netlist file $(LAYOUT_NETLIST_MAGIC)"
 quit -noprompt
 endef
+
 
 define MAGIC_ROUTINE_PEX =
 drc off
@@ -94,6 +119,7 @@ puts "Created pex file $(LAYOUT_NETLIST_PEX)"
 
 quit -noprompt
 endef
+
 
 define HELP_ENTRIES +=
 
@@ -129,6 +155,13 @@ endif
 magic-edit: magic-validation
 	cd $(GDS_DIR) && $(MAGIC) <<EOF |& tee $(LOG_MAGIC)
 	$(MAGIC_ROUTINE_LOAD)
+	EOF
+
+
+.PHONY: magic-drc
+magic-drc:
+	cd $(GDS_DIR) && $(MAGIC_BATCH) <<EOF |& tee $(LOG_MAGIC)
+	$(MAGIC_ROUTINE_DRC)
 	EOF
 
 

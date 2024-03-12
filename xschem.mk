@@ -66,7 +66,7 @@ endef
 .PHONY: xschem-validation
 xschem-validation:
 ifeq (,$(SCH))
-	$(call ERROR_MESSAGE, [xschem] There's no schematic for $(TOP))
+	$(call WARNING_MESSAGE, [xschem] There's no schematic for $(TOP))
 endif
 
 	$(call INFO_MESSAGE, [xschem] rcfile:               $(XSCHEM_RCFILE))
