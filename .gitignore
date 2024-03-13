@@ -165,3 +165,6 @@ programs/*
 xschem
 **/output
 **/.vscode
+**/cace/*.spice
+**/cace/*.sym
+**/netlist

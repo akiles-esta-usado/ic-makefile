@@ -1,0 +1,59 @@
+source $env(PDK_ROOT)/$env(PDK)/libs.tech/xschem/xschemrc
+
+proc append_modules { path } {
+    global XSCHEM_LIBRARY_PATH
+
+    foreach module [ glob -nocomplain -type d $path ] {
+        set module_sch_sym {}
+
+        append module_sch_sym [ glob -nocomplain $module/symbol/*.sch ]
+        append module_sch_sym [ glob -nocomplain $module/symbol/*.sym ]
+        
+        if { [ llength $module_sch_sym ] > 0 } {
+            append XSCHEM_LIBRARY_PATH :[file normalize $module]
+        }
+    }
+}
+
+
+proc create_empty_sch { filename } {
+    puts "Creating $filename"
+    xschem clear force
+    xschem saveas $filename schematic
+    exit
+}
+
+
+proc get_variables { } {
+    puts "current_dirname:  [ xschem get current_dirname ]"
+    puts "current_name:     [ xschem get current_name ]"
+    puts "current_win_path: [ xschem get current_win_path ]"
+    puts "netlist_name:     [ xschem get netlist_name ]"
+    puts "netlist_type:     [ xschem get netlist_type ]"
+    puts "version:          [ xschem get version ]"
+}
+
+
+proc startup_information { } {
+    global XSCHEM_LIBRARY_PATH
+    puts ""
+    puts "Paths registered on xschem:"
+    foreach path [ lsort [ split $XSCHEM_LIBRARY_PATH : ]] {puts "- $path"}
+    
+    set script_path [ file normalize [ info script ] ]
+    set working_path [pwd]
+    puts ""
+    puts "xschemrc:     $script_path"
+    puts "working path: $working_path"
+
+    puts ""
+    puts "-- THIS DEPENDS ON THE STRUCTURE OF THE PROJECT --"
+    puts "The spice is generated on \$module/output/extraction/test/"
+    puts "When doing pex simulations, use relative references from there"
+}
+
+set XSCHEM_START_WINDOW {0_top.sch}
+
+append_modules ./*
+
+startup_information
