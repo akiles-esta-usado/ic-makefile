@@ -39,6 +39,9 @@ TERM_SMUL:=$(shell tput smul)
 TERM_RMUL:=$(shell tput rmul)
 TERM_TAB:=$(shell printf "\t")
 
+TIMESTAMP_DAY=$(shell date +%Y_%m_%d)
+TIMESTAMP_TIME=$(shell date +%H_%M_%S)
+
 define ERROR_MESSAGE =
 	$(error $(COLOR_RED)$(1)$(COLOR_END))
 endef
@@ -57,6 +60,10 @@ endef
 
 define PRINT_LIST =
 	$(shell echo $(1) | tr " " "\t")
+endef
+
+define PRINT_NAMES =
+	$(basename $(notdir $(1)))
 endef
 
 define PARAMETER_ENTRY +=
@@ -83,6 +90,7 @@ clean:
 
 full-clean:
 	$(RM) $(FULL_CLEANABLE)
+	make clean
 
 
 .PHONY: help
@@ -95,8 +103,9 @@ help:
 # https://stackoverflow.com/questions/16467718/how-to-print-out-a-variable-in-makefile
 #print_% : ; $(info $*: $(flavor $*) variable - $($*)) @true
 #print_% : ; $(call INFO_MESSAGE,$*:$(TERM_TAB)$(TERM_SMUL)$(flavor $*)$(TERM_RMUL)$(TERM_TAB)$($*)) @true
-print_% : ; $(call INFO_MESSAGE,$*:$(TERM_TAB)$(TERM_SMUL)$(flavor $*)$(TERM_RMUL)$(TERM_TAB)$(call PRINT_LIST,$(wildcard $($*)))) @true
-print_raw_% : ; $(call INFO_MESSAGE,$*:$(TERM_TAB)$(TERM_SMUL)$(flavor $*)$(TERM_RMUL)$(TERM_TAB)$(call PRINT_LIST,$($*))) @true
+print_% : ;       $(call INFO_MESSAGE,$*:$(TERM_TAB)$(TERM_SMUL)$(flavor $*)$(TERM_RMUL)$(TERM_TAB)$(call PRINT_LIST,$(wildcard $($*)))) @true
+print_raw_% : ;   $(call INFO_MESSAGE,$*:$(TERM_TAB)$(TERM_SMUL)$(flavor $*)$(TERM_RMUL)$(TERM_TAB)$(call PRINT_LIST,$($*))) @true
+print_names_% : ; $(call INFO_MESSAGE,$*:$(TERM_TAB)$(TERM_SMUL)$(flavor $*)$(TERM_RMUL)$(TERM_TAB)$(call PRINT_NAMES,$($*))) @true
 
 
 print_sorted_%:

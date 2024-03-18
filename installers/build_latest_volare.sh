@@ -3,15 +3,18 @@
 set -ex
 set -u
 
-COMMIT=bdc9412b3e468c102d01b7cf6337be06ec6e9c9a
+COMMIT=d8bfd6f2a19026ad9b614424c249243b670e2ab2
 
-rm -rf $PDK_ROOT/volare/sky130/versions/$COMMIT/sky130*
+volare build --pdk=sky130 $COMMIT
 volare enable --pdk=sky130 $COMMIT
+
 rm -rf $PDK_ROOT/sky130B
 rm -rf $PDK_ROOT/volare/sky130/versions/$COMMIT/sky130B
 
-rm -rf $PDK_ROOT/volare/sky130/versions/$COMMIT/gf180mcu*
+
+volare build --pdk=gf180mcu $COMMIT
 volare enable --pdk=gf180mcu $COMMIT
+
 rm -rf $PDK_ROOT/gf180mcuA
 rm -rf $PDK_ROOT/gf180mcuB
 rm -rf $PDK_ROOT/gf180mcuC

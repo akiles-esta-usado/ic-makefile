@@ -220,7 +220,7 @@ print_vars : \
 	print_MAG_CELL \
 	print_GDS \
 	print_GDS_CELL \
-	print_TBS \
+	print_names_TBS \
 	print_SCH_NETLIST \
 	print_SCH_NETLIST_NOPREFIX \
 	print_SCH_NETLIST_PREFIX \

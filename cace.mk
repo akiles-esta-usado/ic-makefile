@@ -57,7 +57,10 @@ CACE_FILE_RESULTS:=$(CACE_DIR)/$(TOP)_results.txt
 .PHONY: cace-validation
 cace-validation:
 ifeq (,$(wildcard $(TOP)))
-	$(call ERROR_MESSAGE, [cace] there's no TOP defined)
+	$(call ERROR_MESSAGE, [cace] There's no TOP defined)
+endif
+ifeq (,$(wildcard $(MODULE_DIR)))
+	$(call ERROR_MESSAGE, [cace] TOP doesn't have a directory asociated)
 endif
 	$(call INFO_MESSAGE, [cace] description file:              $(wildcard $(CACE_FILE)))
 	$(call INFO_MESSAGE, [cace] description file with results: $(wildcard $(CACE_FILE_RESULTS)))
@@ -96,5 +99,23 @@ cace-tb: cace-validation
 ifeq (,$(CACE_TEST))
 	$(call ERROR_MESSAGE, CACE_TEST variable is not set)
 endif
+ifeq (,$(CACE_TB))
+	$(call ERROR_MESSAGE,[cace] CACE_TEST points to an inexistent cace testbench)
+endif
 	$(XSCHEM) --netlist_path $(TB_DIR) $(CACE_TB) \
 		|& tee $(LOG_CACE)_tb_$(basename $(notdir $(CACE_TB))).log
+
+
+.PHONY: cace-create-tb
+cace-create-tb: cace-validation
+ifeq (UNDEFINED,$(CACE_TEST))
+	$(call ERROR_MESSAGE,[cace] CACE_TEST variable is not set)
+endif
+
+ifneq (,$(CACE_TB))
+	$(call ERROR_MESSAGE,[cace] CACE_TEST points to an existent cace testbench)
+endif
+
+	$(call INFO2_MESSAGE,[cace] Creating cace test $(CACE_DIR)/$(CACE_TEST).sch)
+	cp $(_IC_MAKEFILE)/templates/sky130/cace-tb-template.sch $(CACE_DIR)/$(CACE_TEST).sch
+	sed -i "s/REPLACE_TEXT_TESTBENCH_NAME/$(CACE_TEST)/" $(CACE_DIR)/$(CACE_TEST).sch

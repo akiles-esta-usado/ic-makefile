@@ -56,23 +56,85 @@ endif
 	mv $(REPORT_DIR)/*.cir $(LAYOUT_NETLIST_KLAYOUT)
 
 
+# DRC RULES
+###########
+
+# --help -h                           Print this help message.
+# --path=<file_path>                  The input GDS file path.
+# --variant=<combined_options>        Select combined options of metal_top, mim_option, and metal_level. Allowed values (A, B, C, D, E, F).
+#                                     variant=A: Select  metal_top=30K  mim_option=A  metal_level=3LM
+#                                     variant=B: Select  metal_top=11K  mim_option=B  metal_level=4LM
+#                                     variant=C: Select  metal_top=9K   mim_option=B  metal_level=5LM
+#                                     variant=D: Select  metal_top=11K  mim_option=B  metal_level=5LM
+#                                     variant=E: Select  metal_top=9K   mim_option=B  metal_level=6LM
+#                                     variant=F: Select  metal_top=9K   mim_option=A  metal_level=6LM
+# --topcell=<topcell_name>            Topcell name to use.
+# --table=<table_name>                Table name to use to run the rule deck.
+# --mp=<num_cores>                    Run the rule deck in parts in parallel to speed up the run. [default: 1]
+# --run_dir=<run_dir_path>            Run directory to save all the results [default: pwd]
+# --thr=<thr>                         The number of threads used in run.
+# --run_mode=<run_mode>               Select klayout mode Allowed modes (flat , deep). [default: flat]
+# --verbose                           Detailed rule execution log for debugging.
+# --no_feol                           Turn off FEOL rules from running.
+# --no_beol                           Turn off BEOL rules from running.
+# --no_connectivity                   Turn off connectivity rules.
+# --density                           Turn on Density rules.
+# --density_only                      Turn on Density rules only.
+# --antenna                           Turn on Antenna checks.
+# --antenna_only                      Turn on Antenna checks only.
+# --split_deep                        Spliting some long run rules to be run in deep mode permanently.
+# --no_offgrid                        Turn off OFFGRID checking rules.
+# --macro_gen                         Generating the full rule deck without run.
+# --slow_via                          Turn on SLOW_VIA option for MT30.8 rule.
+
+# feol, beol, connectivity, density, antenna, offgrid
+
 KLAYOUT_SCRIPT_DRC_PDK:=python $(KLAYOUT_HOME)/drc/run_drc.py \
 	--variant=D \
-	--path $(GDS) \
-	--topcell=$(GDS_CELL) \
-	--run_dir=$(REPORT_DIR) \
 	--run_mode=flat \
-	--antenna \
-	--density \
+	--verbose \
 	--thr=$(NPROCS) \
-	--verbose
+	--run_dir=$(REPORT_DIR) \
+	--path $(GDS) \
+	--topcell=$(GDS_CELL)
+
+# See https://open-source-silicon.slack.com/archives/C016HUV935L/p1710737146725369
+KLAYOUT_SCRIPT_DRC_PDK_ANTENNA_ONLY:=$(KLAYOUT_SCRIPT_DRC_PDK) \
+	--antenna_only \
+	--no_offgrid
+
+KLAYOUT_SCRIPT_DRC_PDK_DENSITY_ONLY:=$(KLAYOUT_SCRIPT_DRC_PDK) \
+	--density_only \
+	--no_connectivity \
+	--no_offgrid
+
+KLAYOUT_SCRIPT_DRC_PDK_BEOL:=$(KLAYOUT_SCRIPT_DRC_PDK) \
+	--no_feol
+
+KLAYOUT_SCRIPT_DRC_PDK_FEOL:=$(KLAYOUT_SCRIPT_DRC_PDK) \
+	--no_beol
 
 
 .PHONY: klayout-drc-efabless
 klayout-drc-efabless: klayout-validation
-	$(KLAYOUT_SCRIPT_DRC_PDK) \
-		|& tee $(LOG_KLAYOUT)_drc_efabless.log || true
+	rm $(REPORT_DIR)/*.lyrdb
 
+	$(KLAYOUT_SCRIPT_DRC_PDK_BEOL) \
+		|& tee $(LOG_KLAYOUT)_drc_efabless_beol.log || true
+	mv $(REPORT_DIR)/$(TOP)_main.lyrdb $(REPORT_DIR)/drc_efabless_$(TOP)_beol.lyrdb
+
+	$(KLAYOUT_SCRIPT_DRC_PDK_FEOL) \
+		|& tee $(LOG_KLAYOUT)_drc_efabless_feol.log || true
+	mv $(REPORT_DIR)/$(TOP)_main.lyrdb $(REPORT_DIR)/drc_efabless_$(TOP)_feol.lyrdb
+
+	$(KLAYOUT_SCRIPT_DRC_PDK_DENSITY_ONLY) \
+		|& tee $(LOG_KLAYOUT)_drc_efabless_density.log || true
+	mv $(REPORT_DIR)/$(TOP)_density.lyrdb $(REPORT_DIR)/drc_efabless_$(TOP)_density.lyrdb
+
+	$(KLAYOUT_SCRIPT_DRC_PDK_ANTENNA_ONLY) \
+		|& tee $(LOG_KLAYOUT)_drc_efabless_antenna.log || true
+	mv $(REPORT_DIR)/$(TOP)_antenna.lyrdb $(REPORT_DIR)/drc_efabless_$(TOP)_antenna.lyrdb
+	
 
 # -rd input
 # -rd topcell

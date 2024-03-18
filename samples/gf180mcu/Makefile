@@ -183,9 +183,6 @@ FULL_CLEANABLE:= $(CLEANABLE) \
 
 # Logs
 
-TIMESTAMP_DAY=$(shell date +%Y_%m_%d)
-TIMESTAMP_TIME=$(shell date +%H_%M_%S)
-
 LOG_DIR=$(abspath ./logs/$(TIMESTAMP_DAY))
 ifeq (,$(wildcard $(LOG_DIR)))
 $(shell mkdir -p $(LOG_DIR))
@@ -286,7 +283,9 @@ create-layout: create-validation
 ifneq (,$(wildcard $(_FIRST_TOP_MODULE_DIR)/$(TOP)/layout/$(TOP).gds))
 	$(call WARNING_MESSAGE, layout already exists)
 else
-	klayout -t -e -zz -r $(_IC_MAKEFILE)/scripts/empty-gds.py -rd filepath=$(_FIRST_TOP_MODULE_DIR)/$(TOP)/layout/$(TOP).gds
+	klayout -t -e -zz \
+		-r $(_IC_MAKEFILE)/scripts/empty-gds.py \
+		-rd filepath=$(_FIRST_TOP_MODULE_DIR)/$(TOP)/layout/$(TOP).gds
 endif
 
 
@@ -294,30 +293,6 @@ endif
 create-module:
 	$(MAKE) create-schematic
 	$(MAKE) create-layout
-
-
-.PHONY: extensive-test
-extensive-test:
-	$(MAKE) klayout-drc-only     |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_extensive_test_$(TOP).log
-	$(MAKE) klayout-lvs-only     |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_extensive_test_$(TOP).log
-	$(MAKE) netgen-lvs-klayout   |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_extensive_test_$(TOP).log
-	$(MAKE) netgen-lvs-magic     |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_extensive_test_$(TOP).log
-	$(MAKE) magic-pex-extraction |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_extensive_test_$(TOP).log
-
-
-.PHONY: drc
-drc:
-	$(MAKE) klayout-drc
-
-
-lvs:
-	$(MAKE) klayout-lvs-only   |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_lvs_$(TOP).log
-	$(MAKE) netgen-lvs-magic   |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_lvs_$(TOP).log
-	$(MAKE) netgen-lvs-klayout |& tee -a $(LOG_DIR)/$(TIMESTAMP_TIME)_lvs_$(TOP).log
-
-
-pex:
-	$(MAKE) magic-pex-extraction
 
 
 .PHONY: validate-sample

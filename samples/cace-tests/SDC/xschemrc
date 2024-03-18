@@ -6,8 +6,8 @@ proc append_modules { path } {
     foreach module [ glob -nocomplain -type d $path ] {
         set module_sch_sym {}
 
-        append module_sch_sym [ glob -nocomplain $module/xschem/*.sch ]
-        append module_sch_sym [ glob -nocomplain $module/xschem/*.sym ]
+        append module_sch_sym [ glob -nocomplain $module/symbol/*.sch ]
+        append module_sch_sym [ glob -nocomplain $module/symbol/*.sym ]
         
         if { [ llength $module_sch_sym ] > 0 } {
             append XSCHEM_LIBRARY_PATH :[file normalize $module]
@@ -54,6 +54,7 @@ proc startup_information { } {
 
 set XSCHEM_START_WINDOW {0_top.sch}
 
+append XSCHEM_LIBRARY_PATH :.
 append_modules ./*
 
 startup_information

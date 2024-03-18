@@ -34,9 +34,7 @@ LOG_KLAYOUT_LVS=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_lvs_$(TOP).log
 LOG_KLAYOUT_DRC_EFABLES=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_drc_efabless_$(TOP).log
 LOG_KLAYOUT_DRC_PRECHECK=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_drc_precheck_$(TOP).log
 
-
 LOG_KLAYOUT=$(LOG_DIR)/$(TIMESTAMP_TIME)_$(TOP)_klayout
-
 
 ALL_LYRDB:=$(filter %.lyrdb,$(wildcard $(REPORT_DIR)/*))
 ALL_LVSDB:=$(filter %.lvsdb,$(wildcard $(REPORT_DIR)/*))
@@ -86,7 +84,7 @@ endif
 	$(call INFO_MESSAGE, [klayout] directory:         $(wildcard $(GDS_DIR)))
 
 ifeq (,$(wildcard $(SCH_NETLIST_NOPREFIX)))
-	$(call WARNING_MESSAGE, [klayout] Schematic netlist doesn't exist$)
+	$(call WARNING_MESSAGE, [klayout] Schematic netlist doesn't exist)
 else
 	$(call INFO_MESSAGE, [klayout] schematic netlist: $(wildcard $(SCH_NETLIST_NOPREFIX)))
 endif
@@ -151,3 +149,11 @@ klayout-padring: klayout-validation
 	$(KLAYOUT) -t -e -rr $(_IC_MAKEFILE)/scripts/padring.py \
 		-rd padring_file=$(PADRING_FILE) \
 		$(GDS)
+
+
+.PHONY: klayout-extract-topcells
+klayout-extract-topcells: klayout-validation
+	$(KLAYOUT) -zz \
+		-r $(_IC_MAKEFILE)/scripts/top-cell-extractor.py \
+		-rd layout=$(GDS) \
+		-rd output_dir=$(GDS_DIR)
