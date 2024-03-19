@@ -40,7 +40,7 @@ dependencies {
 # Pin names and descriptions
 
 pins {
-	name:		vdd
+	name:		VDD
 	description:	Analog power supply
 	type:		power
 	direction:	inout
@@ -48,7 +48,7 @@ pins {
 	Vmax:		3.6
 
  	+
-	name:		vss
+	name:		VSS
 	description:	Analog ground
 	type:		ground
 	direction:	inout
@@ -56,7 +56,7 @@ pins {
 	Vmax:		0.3
 
 	+
-	name:		dout
+	name:		DOUT
 	description:	Amplifier voltage output
 	type:		signal
 	direction:	output
@@ -72,7 +72,7 @@ default_conditions {
 	description:	Analog power supply voltage
 	display:	vdd
 	unit:		V
-	typical:	3.3
+	typical:	1.8
 
 	+
 	name:		vvss
@@ -80,20 +80,6 @@ default_conditions {
 	display:	vss
 	unit:		V
 	typical:	0
-
-	+
-	name:		rout
-	description:	Output load resistance
-	display:	rload
-	unit:		k{ohms}
-	typical:	330
-
-	+
-	name:		cout
-	description:	Output load capacitance
-	display:	cload
-	unit:		fF
-	maximum:	0
 
 	+
 	name:		temperature
@@ -143,6 +129,29 @@ electrical_parameters {
 	conditions {
 		name:		temperature
 		typical:	27
+
+		+
+		name:		corner
+		typical:	tt
+	}
+
+	+
+	name:		ton
+	status:		skip
+	description:	Mean output value
+	display:	Temp
+	unit:		V
+	spec {
+		typical:	any
+	}
+	simulate {
+		tool:		ngspice
+		template:	transient.spice
+		format:		ascii .data null result
+	}
+	conditions {
+		name:		temperature
+		typical:	0
 
 		+
 		name:		corner
