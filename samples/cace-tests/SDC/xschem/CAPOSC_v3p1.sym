@@ -1,0 +1,26 @@
+v {xschem version=3.0.0 file_version=1.2 }
+G {}
+K {type=subcircuit
+format="@name @pinlist @symname"
+template="name=X1"}
+V {}
+S {}
+E {}
+L 4 60 -40 60 40 {}
+L 4 60 40 120 40 {}
+L 4 120 -40 120 40 {}
+L 4 60 -40 120 -40 {}
+L 4 90 -40 90 -10 {}
+L 4 90 -0 90 40 {}
+L 4 80 -10 100 -10 {}
+L 4 80 -0 100 0 {}
+B 5 77.5 -42.5 82.5 -37.5 {name=TOP_V
+dir=inout}
+B 5 97.5 -42.5 102.5 -37.5 {name=TOP_B
+dir=inout}
+B 5 87.5 37.5 92.5 42.5 {name=BOT
+dir=inout}
+T {@name} 100 40 0 0 0.4 0.4 {}
+T {2pF} 70 10 0 0 0.4 0.4 {}
+T {TOP_V} 60 -40 0 0 0.1 0.1 {}
+T {TOP_B} 105 -40 0 0 0.1 0.1 {}
