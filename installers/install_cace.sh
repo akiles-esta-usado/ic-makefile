@@ -6,5 +6,5 @@ set -u
 #python3 -m pip install --upgrade --break-system-packages cace
 
 # Installation by commit
-COMMIT=188d784acc3a3761d5938e6d81bf79de008422d7
+COMMIT=44c427a4e6f30cc8691b938f085b05ecfae1daff
 pip install --break-system-packages git+https://github.com/efabless/cace.git@$COMMIT
