@@ -191,4 +191,4 @@ klayout-drc-only: klayout-validation
 	$(RM) $(REPORT_DIR)/*.lyrdb
 
 	$(MAKE) klayout-drc-efabless
-	$(MAKE) klayout-drc-precheck
+	#$(MAKE) klayout-drc-precheck

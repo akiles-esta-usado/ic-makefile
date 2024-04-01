@@ -26,6 +26,7 @@ MAGIC=magic -rcfile $(MAGIC_RCFILE) -noconsole
 MAGIC_BATCH=$(MAGIC) -nowindow -dnull
 
 # Defining Flatglob
+# It's recommended to flatten subckt that have no explicit ports
 ifeq (sky130A,$(PDK))
 define FLATGLOB =
 gds flatglob *sky130_fd_pr__*[A-Z]*
@@ -37,22 +38,49 @@ gds flatglob pmos*
 gds flatglob via*
 gds flatglob compass*
 gds flatglob rectangle*
+gds flatglob np_*_*
+gds flatglob pn_*_*
+gds flatglob nmoscap_*
+gds flatglob *nmos_*_*[A-Z]*
+gds flatglob *pmos_*_*[A-Z]*
+gds flatglob *mim_*_*[A-Z]*
+gds flatglob *ppolyf_*_*[A-Z]*
+gds flatglob comp018green_*
+gds flatglob *diode_nd2ps_*
+gds flatglob *diode_pd2nw_*
+gds flatglob *cap_nmos_*
+gds flatglob *nfet_*
+gds flatglob *pfet_*
+
+gds flatglob POLY_SUB_FILL*
+gds flatglob GF_NI_FILL*
+gds flatglob *_CDNS_*
+
 endef
 endif
 
 
-define MAGIC_ROUTINE_LOAD =
-gds rescale false
 
+
+ifneq (,$(wildcard $(LEF)))
+MAGIC_ROUTINE_LOAD__READ_LEF:=lef read $(wildcard $(LEF))
+endif
+
+
+#gds rescale false
+define MAGIC_ROUTINE_LOAD =
+gds ordering on
 gds flatten yes
 
 $(FLATGLOB)
 
 gds read $(GDS)
 load $(GDS_CELL)
-box 0 0 0 0
+select top cell
+expand
 
 readspice $(SCH_NETLIST_NOPREFIX)
+$(MAGIC_ROUTINE_LOAD__READ_LEF)
 
 puts "layout loaded :)"
 endef
@@ -75,45 +103,57 @@ drc listall why
 close stdout
 quit -noprompt
 endef
-# Write into drc report file
-# puts $$fp [ drc check ]
-# puts $$fp [ set drcresult [drc listall why] ]
 
 
 define MAGIC_ROUTINE_LVS =
 drc off
 gds drccheck off
+set SUB 0
 $(MAGIC_ROUTINE_LOAD)
 
 cellname rename $(GDS_CELL) $(GDS_CELL)_clean
 
-extract
+extract path extfiles
+extract all
 ext2spice lvs
-ext2spice -o "$(LAYOUT_NETLIST_MAGIC)"
+ext2spice -p extfiles -o "$(LAYOUT_NETLIST_MAGIC)"
 
 puts "Created netlist file $(LAYOUT_NETLIST_MAGIC)"
 quit -noprompt
 endef
 
+# https://open-source-silicon.slack.com/archives/C04MJUYP99V/p1711644686080599
+# From Tim Edwards:
+# - cthresh:    won't make the simulation faster, but 0.1 could avoid "trivially small parasitics"
+# - rthresh:    Never use. Generates lumped resistance and those are not handled by the tools.
+# - extresists: Produces parasitic resistance. 
+# - extresist tolerance: Might reduce parasitic resistance count, but should be set for each case.
+# - set SUB 0: Always use it when doing PEX extraction.
+ifeq (,$(MAGIC_PEX_TOLERANCE))
+MAGIC_ROUTINE_PEX__TOLERANCE=all
+else
+MAGIC_ROUTINE_PEX__TOLERANCE=tolerance $(MAGIC_PEX_TOLERANCE)
+endif
 
 define MAGIC_ROUTINE_PEX =
 drc off
 gds drccheck off
+set SUB 0
 $(MAGIC_ROUTINE_LOAD)
 
 flatten $(GDS_CELL)_pex
 load $(GDS_CELL)_pex
 box values 0 0 0 0
 
+extract path extfiles
 extract all
 ext2sim labels on
 ext2sim
-extresist tolerance 10
-extresist all
+extresist $(MAGIC_ROUTINE_PEX__TOLERANCE)
 ext2spice lvs
 ext2spice extresist on
 ext2spice cthresh 0
-ext2spice -o "$(LAYOUT_NETLIST_PEX)"
+ext2spice -p extfiles -o "$(LAYOUT_NETLIST_PEX)"
 
 puts "Created pex file $(LAYOUT_NETLIST_PEX)"
 

@@ -107,3 +107,7 @@ I find this post about [testbench reusability](https://circuit-artists.com/testb
 [Link](http://www.seas.ucla.edu/brweb/journal.html)
 
 Contains design guidelines for analog blocks like LDOs, OTAs, etc.
+
+## More tips
+
+[Link](https://designers-guide.org/)

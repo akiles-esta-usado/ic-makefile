@@ -1,3 +1,6 @@
 [submodule "extra_be_checks"]
 	path = extra_be_checks
 	url = https://github.com/d-m-bailey/extra_be_checks.git
+[submodule "OpenLane"]
+	path = OpenLane
+	url = https://github.com/The-OpenROAD-Project/OpenLane.git
