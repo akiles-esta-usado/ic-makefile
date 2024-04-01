@@ -80,12 +80,17 @@ endif
 # 	$(call WARNING_MESSAGE, [cace] CACE description with results has syntax errors)
 # endif
 
+USE_RESULTS:=
 
 .PHONY: cace-gui
 cace-gui:
+ifeq (Y,$(USE_RESULTS))
+	$(CACE_GUI) $(CACE_FILE_RESULTS) \
+		|& tee $(LOG_CACE)_gui_run.log
+else
 	$(CACE_GUI) $(CACE_FILE) \
 		|& tee $(LOG_CACE)_gui_run.log
-
+endif
 
 .PHONY: cace-cli
 cace-cli: cace-validation
