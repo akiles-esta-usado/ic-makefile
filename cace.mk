@@ -31,7 +31,7 @@ endef
 
 LOG_CACE:=$(LOG_DIR)/$(TIMESTAMP_TIME)_$(TOP)_cace
 
-CACE_DIR:=./cace
+CACE_DIR:=./$(TOP)/cace
 
 
 CACE:=SPICE_USERINIT_DIR=$(NGSPICE_RCDIR) cace
