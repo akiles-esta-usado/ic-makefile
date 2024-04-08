@@ -22,6 +22,8 @@ NGSPICE=SPICE_USERINIT_DIR=$(NGSPICE_RCDIR) ngspice \
 	-a \
 	--define=num_threads=$(NPROCS)
 
+GCC=gcc -Wall -Wpedantic -g
+
 # This allows using by default the tb name on the raw name.
 # TODO: See how to define with xschem the name of the raw file.
 # -r $(basename $(notdir $(TB_NETLIST))).raw
@@ -63,3 +65,10 @@ ngspice-sim: ngspice-validation xschem-test-netlist
 ngspice-compile-verilog: ngspice-validation
 	mkdir -p $(CODEMODELS_DIR)
 	cd $(CODEMODELS_DIR) && $(NGSPICE) vlnggen $(VERILOG) |& tee $(LOG_NGSPICE)
+
+
+.PHONY: ngspice-compile-codemodel
+ngspice-compile-codemodel: ngspice-validation
+	mkdir -p $(CODEMODELS_DIR)
+	$(foreach model,$(CODE_MODELS),echo hola)
+	#cd $(CODEMODELS_DIR) && $(NGSPICE) vlnggen $(VERILOG) |& tee $(LOG_NGSPICE)
