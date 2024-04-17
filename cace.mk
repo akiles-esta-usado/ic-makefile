@@ -85,11 +85,9 @@ USE_RESULTS:=
 .PHONY: cace-gui
 cace-gui:
 ifeq (Y,$(USE_RESULTS))
-	$(CACE_GUI) $(CACE_FILE_RESULTS) \
-		|& tee $(LOG_CACE)_gui_run.log
+	$(CACE_GUI) $(CACE_FILE_RESULTS)
 else
-	$(CACE_GUI) $(CACE_FILE) \
-		|& tee $(LOG_CACE)_gui_run.log
+	$(CACE_GUI) $(CACE_FILE)
 endif
 
 .PHONY: cace-cli

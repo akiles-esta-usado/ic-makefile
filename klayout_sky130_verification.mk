@@ -51,24 +51,30 @@ endif
 	mv $(REPORT_DIR)/*.cir $(LAYOUT_NETLIST_KLAYOUT)
 
 
-# -rd input
-# -rd top_cell
-# -rd report
-# -rd offgrid
-# -rd thr
-# -rd feol
-# -rd beol
-# -rd seal
-# -rd floating_met
-# $(KLAYOUT_HOME)/drc/sky130A_mr.drc
+# -rd input            
+# -rd top_cell         
+# -rd report           
+# -rd thr              
+# -rd feol             front-end-of-line checks
+# -rd beol             back-end-of-line checks
+# -rd offgrid          manufacturing grid/angle checks
+# -rd seal             SEAL RING checks
+# -rd floating_met     back-end-of-line checks (?)
+##############################################
+# Top level conditionals
+
+# - feol		Uses seal
+# - beol		Uses seal and floating met
+# - offgrid		
+
+
 KLAYOUT_SCRIPT_DRC_PRECHECK:=$(KLAYOUT) -b \
 	-r $(KLAYOUT_HOME)/drc/sky130A_mr.drc \
 	-rd input=$(GDS) \
 	-rd top_cell=$(GDS_CELL) \
 	-rd thr=$(NPROCS) \
 	-rd floating_met=true \
-	-rd seal=true \
-	-rd offgrid=true
+	-rd seal=true
 
 
 .PHONY: klayout-drc-precheck
@@ -77,13 +83,22 @@ klayout-drc-precheck:
 		-rd report=$(REPORT_DIR)/precheck_beol_$(TOP).lyrdb \
 		-rd beol=true \
 		-rd feol=false \
+		-rd offgrid=false \
 		|& tee $(LOG_KLAYOUT)_drc_precheck_beol.log || true
 
 	$(KLAYOUT_SCRIPT_DRC_PRECHECK) \
 		-rd report=$(REPORT_DIR)/precheck_feol_$(TOP).lyrdb \
 		-rd beol=false \
 		-rd feol=true \
+		-rd offgrid=false \
 		|& tee $(LOG_KLAYOUT)_drc_precheck_feol.log || true
+
+	$(KLAYOUT_SCRIPT_DRC_PRECHECK) \
+		-rd report=$(REPORT_DIR)/precheck_offgrid_$(TOP).lyrdb \
+		-rd beol=false \
+		-rd feol=false \
+		-rd offgrid=true \
+		|& tee $(LOG_KLAYOUT)_drc_precheck_offgrid.log || true
 
 
 .PHONY: klayout-drc-only

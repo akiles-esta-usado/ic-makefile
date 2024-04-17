@@ -25,14 +25,26 @@ LOG_MAGIC_PEX=$(LOG_DIR)/$(TIMESTAMP_TIME)_magic_pex_$(TOP).log
 MAGIC=magic -rcfile $(MAGIC_RCFILE) -noconsole
 MAGIC_BATCH=$(MAGIC) -nowindow -dnull
 
-# Defining Flatglob
-# It's recommended to flatten subckt that have no explicit ports
-ifeq (sky130A,$(PDK))
+MAG_DIR=$(abspath $(MODULE_DIR)/mag)
+MAG=$(abspath $(MAG_DIR)/$(TOP).mag)
+
+
+ifeq (sky130A,$(PDK)) # === SKY130 Specific configurations =====================
+
 define FLATGLOB =
-gds flatglob *sky130_fd_pr__*[A-Z]*
+gds flatglob *sky130_fd_pr__*
 gds flatglob *res_poly*
+gds flatglob mim_cap*
 endef
-else ifeq (gf180mcuD,$(PDK))
+
+# TODO: Fix when readspice changes the TOP CELL.
+define MAGIC_ROUTINE_LOAD__READSPICE_ALWAYS =
+readspice $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/spice/sky130_fd_sc_hd.spice
+endef
+
+
+else ifeq (gf180mcuD,$(PDK)) # === GF180 Specific configurations ===============
+
 define FLATGLOB =
 gds flatglob pmos*
 gds flatglob via*
@@ -59,12 +71,11 @@ gds flatglob *_CDNS_*
 endef
 endif
 
+# Cells with _FLAT suffix got flattened
+define FLATGLOB +=
 
-
-
-ifneq (,$(wildcard $(LEF)))
-MAGIC_ROUTINE_LOAD__READ_LEF:=lef read $(wildcard $(LEF))
-endif
+gds flatglob *_FLAT
+endef
 
 
 #gds rescale false
@@ -75,12 +86,29 @@ gds flatten yes
 $(FLATGLOB)
 
 gds read $(GDS)
-load $(GDS_CELL)
+load $(TOP)
+select cell $(TOP)
+select top cell
+
+$(MAGIC_ROUTINE_LOAD__READSPICE_ALWAYS)
+
+if {[file exists $(SCH_NETLIST_NOPREFIX)]} {
+	readspice $(SCH_NETLIST_NOPREFIX)
+}
+
+load $(TOP)
+select cell $(TOP)
 select top cell
 expand
 
-readspice $(SCH_NETLIST_NOPREFIX)
-$(MAGIC_ROUTINE_LOAD__READ_LEF)
+if {[file exists $(LEF)]} {
+	lef read $(LEF)
+}
+
+load $(TOP)
+select cell $(TOP)
+select top cell
+expand
 
 puts "layout loaded :)"
 endef
@@ -88,19 +116,18 @@ endef
 MAGIC_REPORT_DRC=$(REPORT_DIR)/magic_drc.log
 define MAGIC_ROUTINE_DRC =
 $(MAGIC_ROUTINE_LOAD)
-select top cell
 drc euclidean on
 drc style drc(full)
 drc check
 
 # Redirect output to report file. Logs will die :c
-puts "Magic DRC report will be on $(MAGIC_REPORT_DRC)"
-close stdout
-open $(MAGIC_REPORT_DRC) w
+# puts "Magic DRC report will be on $(MAGIC_REPORT_DRC)"
+# close stdout
+# open $(MAGIC_REPORT_DRC) w
 
 drc listall why
 
-close stdout
+# close stdout
 quit -noprompt
 endef
 
@@ -129,8 +156,10 @@ endef
 # - extresists: Produces parasitic resistance. 
 # - extresist tolerance: Might reduce parasitic resistance count, but should be set for each case.
 # - set SUB 0: Always use it when doing PEX extraction.
+#
+# Origintal tolerance set to "all"
 ifeq (,$(MAGIC_PEX_TOLERANCE))
-MAGIC_ROUTINE_PEX__TOLERANCE=all
+MAGIC_ROUTINE_PEX__TOLERANCE=10
 else
 MAGIC_ROUTINE_PEX__TOLERANCE=tolerance $(MAGIC_PEX_TOLERANCE)
 endif
@@ -143,16 +172,17 @@ $(MAGIC_ROUTINE_LOAD)
 
 flatten $(GDS_CELL)_pex
 load $(GDS_CELL)_pex
-box values 0 0 0 0
+select top cell
 
 extract path extfiles
 extract all
 ext2sim labels on
 ext2sim
 extresist $(MAGIC_ROUTINE_PEX__TOLERANCE)
+extresist
 ext2spice lvs
+ext2spice cthresh 0.1
 ext2spice extresist on
-ext2spice cthresh 0
 ext2spice -p extfiles -o "$(LAYOUT_NETLIST_PEX)"
 
 puts "Created pex file $(LAYOUT_NETLIST_PEX)"
@@ -189,6 +219,9 @@ endif
 	$(call INFO_MESSAGE, [magic] extracted netlist: $(wildcard $(LAYOUT_NETLIST_MAGIC)))
 	$(call INFO_MESSAGE, [magic] extracted pex:     $(wildcard $(LAYOUT_NETLIST_PEX)))
 	$(call INFO_MESSAGE, [magic] rcfile:            $(wildcard $(MAGIC_RCFILE)))
+ifeq (,$(wildcard $(MAG_DIR)))
+	$(shell mkdir -p $(MAG_DIR))
+endif
 
 
 .PHONY: magic-edit
@@ -211,7 +244,7 @@ magic-lvs-extraction: magic-validation
 	cd $(GDS_DIR) && $(MAGIC_BATCH) <<EOF |& tee $(LOG_MAGIC_LVS)
 	$(MAGIC_ROUTINE_LVS)
 	EOF
-	
+
 
 .PHONY: magic-pex-extraction
 magic-pex-extraction: magic-validation
@@ -221,3 +254,40 @@ magic-pex-extraction: magic-validation
 
 
 # PEASE READ THIS: https://github.com/mattvenn/magic_challenge/tree/main/mag/tcl
+
+.PHONY: magic-read-tcl
+magic-read-tcl:
+	cd $(MAG_DIR) && $(MAGIC_BATCH) <<EOF |& tee $(LOG_MAGIC_PEX)
+		source $(TOP).tcl
+	EOF
+
+
+.PHONY: magic-mag
+magic-mag:
+	cd $(MAG_DIR) && $(MAGIC) $(MAG)
+
+
+.PHONY: magic-generate-mag-from-tcl
+magic-generate-mag-from-tcl:
+	cd $(MAG_DIR) && $(MAGIC_BATCH) <<EOF
+		source $(TOP).tcl
+		save $(TOP)
+		puts "Stored mag $(MAG_DIR)/$(TOP).mag"
+	EOF
+
+
+.PHONY: magic-generate-gds-from-tcl
+magic-generate-gds-from-tcl:
+	cd $(MAG_DIR) && $(MAGIC_BATCH) <<EOF
+		source $(TOP).tcl
+		gds write $(MODULE_DIR)/layout/$(TOP).gds
+		puts "Stored gds $(MODULE_DIR)/layout/$(TOP).gds"
+	EOF
+
+
+.PHONY: magic-generate-gds-from-mag
+magic-generate-gds-from-mag:
+	cd $(MAG_DIR) && $(MAGIC_BATCH) $(MAG) <<EOF
+		gds write $(MODULE_DIR)/layout/$(TOP).gds
+		puts "Stored gds $(MODULE_DIR)/layout/$(TOP).gds"
+	EOF

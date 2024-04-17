@@ -24,14 +24,16 @@ NETGEN_LVS_REPORT_MAGIC=$(REPORT_DIR)/lvs_magic_comp.out
 NETGEN_LVS_REPORT_KLAYOUT=$(REPORT_DIR)/lvs_klayout_comp.out
 
 NETGEN_LVS_WITH_MAGIC=$(NETGEN) \
-		"$(LAYOUT_NETLIST_MAGIC) $(GDS_CELL)_clean" \
-		"$(SCH_NETLIST_PREFIX) $(GDS_CELL)" \
-		$(NETGEN_RCFILE)
+	"$(LAYOUT_NETLIST_MAGIC) $(GDS_CELL)_clean" \
+	"$(SCH_NETLIST_PREFIX) $(GDS_CELL)" \
+	$(NETGEN_RCFILE) \
+	$(NETGEN_LVS_REPORT_MAGIC)
 
 NETGEN_LVS_WITH_KLAYOUT=$(NETGEN) \
-		"$(LAYOUT_NETLIST_KLAYOUT) $(GDS_CELL)" \
-		"$(SCH_NETLIST_NOPREFIX) $(GDS_CELL)" \
-		$(NETGEN_RCFILE)
+	"$(LAYOUT_NETLIST_KLAYOUT) $(GDS_CELL)" \
+	"$(SCH_NETLIST_NOPREFIX) $(GDS_CELL)" \
+	$(NETGEN_RCFILE) \
+	$(NETGEN_LVS_REPORT_KLAYOUT)
 
 define HELP_ENTRIES += 
 
@@ -72,12 +74,23 @@ endif
 	$(call INFO_MESSAGE, [netgen] lvs report klayout:        $(wildcard $(NETGEN_LVS_REPORT_MAGIC)))
 
 
+
+ifneq (,$(NETGEN_FILTER))
+ifeq (sky130A,$(PDK))
+define NETGEN_LINE_FILTERS =
+sed -i '/Warning:$[ $]Equate pins.*sky130_fd_pr__.*black$[ $]box/d' $(1)
+endef
+endif
+endif
+
+
 .PHONY: netgen-lvs-magic
 netgen-lvs-magic: netgen-validation xschem-netlist-lvs-prefix magic-lvs-extraction
 	cd $(GDS_DIR) && $(NETGEN_LVS_WITH_MAGIC) |& tee $(LOG_NETGEN) || true
-	mv $(GDS_DIR)/comp.out $(NETGEN_LVS_REPORT_MAGIC)
 	@echo Created $(NETGEN_LVS_REPORT_MAGIC)
+	@echo Greping relevant results:
 	grep "Netlist" $(NETGEN_LVS_REPORT_MAGIC)
+	$(call NETGEN_LINE_FILTERS,$(NETGEN_LVS_REPORT_MAGIC))
 
 
 .PHONY: netgen-lvs-klayout
@@ -91,6 +104,6 @@ endif
 	sed -i '/R.*ppoly/s/L/r_length/' $(LAYOUT_NETLIST_KLAYOUT)
 
 	cd $(GDS_DIR) && $(NETGEN_LVS_WITH_KLAYOUT) |& tee $(LOG_NETGEN) || true
-	mv $(GDS_DIR)/comp.out $(NETGEN_LVS_REPORT_KLAYOUT)
 	@echo Created $(NETGEN_LVS_REPORT_KLAYOUT)
+	@echo Greping relevant results:
 	grep "Netlist" $(NETGEN_LVS_REPORT_KLAYOUT)

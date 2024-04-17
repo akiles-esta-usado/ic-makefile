@@ -174,3 +174,5 @@ programs/*
 # **/*.[h,d,o]
 # **/*.cpp
 # **/*.dat
+
+**/PROBLEMS/
