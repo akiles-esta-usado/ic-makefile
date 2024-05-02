@@ -13,21 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# If this variable is not set correctly. LVS will never succeed
-# This variable is case sensitive, VSS != vss
-GND_NAME:=VSS
-
-define PARAMETER_ENTRY +=
-
-Klayout variables:
-  GND_NAME: Indicate the substrate potential (lowest) on a specific layout
-
-  ex: make GND_NAME=B
-
-endef
-
-# Files, directories and Aliases
-################################
+# == Variables == #
 
 LOG_KLAYOUT=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_$(TOP).log
 LOG_KLAYOUT_LVS=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_lvs_$(TOP).log
@@ -42,12 +28,46 @@ ALL_LVSDB:=$(filter %.lvsdb,$(wildcard $(REPORT_DIR)/*))
 PADRING_FILE:=$(wildcard $(GDS_DIR)/*.yaml) \
 	$(wildcard $(GDS_DIR)/*.yml)
 
+# Sometimes, drc/lvs should be performed on FLAT run mode.
+LVS_FLAT=
+DRC_FLAT=
+
+# If this variable is not set correctly. LVS will never succeed
+# This variable is case sensitive, VSS != vss
+GND_NAME:=VSS
+
 ifneq (,$(wildcard $(KLAYOUT_RCFILE)))
 KLAYOUT=klayout -c $(KLAYOUT_RCFILE) -t
 else
 $(call WARNING_MESSAGE, klayoutrc not found)
 KLAYOUT=klayout -t
 endif
+
+# By default: Use deep (faster)
+# If value is N: Use deep
+# If has other value: Use flat (Slower but most accurate)
+ifeq (N,$(DRC_FLAT))
+DRC_FLAT=
+endif
+ifneq (,$(DRC_FLAT))
+KLAYOUT_DRC_RUN_MODE=flat
+else
+KLAYOUT_DRC_RUN_MODE=deep
+endif
+
+ifeq (N,$(LVS_FLAT))
+LVS_FLAT=
+endif
+ifneq (,$(LVS_FLAT))
+KLAYOUT_LVS_RUN_MODE=flat
+else
+KLAYOUT_LVS_RUN_MODE=deep
+endif
+
+KLAYOUT_REPORT_PREFIX=drc_efabless_$(GDS_CELL)_$(KLAYOUT_DRC_RUN_MODE)
+
+
+# == Variables - Documentation == #
 
 define HELP_ENTRIES +=
 
@@ -71,9 +91,17 @@ Klayout related rules:
 
 endef
 
+define PARAMETER_ENTRY +=
 
-# Rules
-#######
+Klayout variables:
+  GND_NAME: Indicate the substrate potential (lowest) on a specific layout
+
+  ex: make GND_NAME=B
+
+endef
+
+
+# == Rules == #
 
 .PHONY: klayout-validation
 klayout-validation:
@@ -104,13 +132,7 @@ klayout-view: klayout-validation
 klayout-edit: klayout-validation
 	$(KLAYOUT) -e $(GDS) |& tee $(LOG_KLAYOUT)_edit.log
 
-
-ifeq (sky130A,$(PDK))
-include $(_IC_MAKEFILE)/klayout_sky130_verification.mk
-else ifeq (gf180mcuD,$(PDK))
-include $(_IC_MAKEFILE)/klayout_gf180mcu_verification.mk
-endif
-
+# == Rules - Validation == #
 
 .PHONY: klayout-lvs-view
 klayout-lvs-view: klayout-validation
@@ -119,11 +141,6 @@ ifeq (,$(ALL_LVSDB))
 else
 	$(KLAYOUT) -e $(GDS) $(foreach file,$(ALL_LVSDB),-mn $(file))
 endif
-
-
-.PHONY: klayout-lvs
-klayout-lvs: klayout-lvs-only
-	make TOP=$(TOP) klayout-lvs-view
 
 
 .PHONY: klayout-drc-view
@@ -135,14 +152,30 @@ else
 endif
 
 
+.PHONY: klayout-lvs
+klayout-lvs: klayout-lvs-only
+	make TOP=$(TOP) klayout-lvs-view
+
+
 .PHONY: klayout-drc
 klayout-drc: klayout-drc-only
 	$(MAKE) klayout-drc-view
 
 
-.PHONY: klayout-eval
-klayout-eval: klayout-drc-only klayout-lvs-only
+# == Rules - Including PDK specific LVS/DRC rules == #
 
+# As a common interface each file should define
+# - klayout-lvs-only
+# - klayout-drc-only
+
+ifeq (sky130A,$(PDK))
+include $(_IC_MAKEFILE)/klayout_sky130_verification.mk
+else ifeq (gf180mcuD,$(PDK))
+include $(_IC_MAKEFILE)/klayout_gf180mcu_verification.mk
+endif
+
+
+# == Rules - Padring functions == #
 
 .PHONY: klayout-padring
 klayout-padring: klayout-validation
@@ -157,3 +190,9 @@ klayout-extract-topcells: klayout-validation
 		-r $(_IC_MAKEFILE)/scripts/top-cell-extractor.py \
 		-rd layout=$(GDS) \
 		-rd output_dir=$(GDS_DIR)
+
+# == Update make variable == #
+
+MAKE=$(MAKE) \
+	DRC_FLAT=$(DRC_FLAT) \
+	LVS_FLAT=$(LVS_FLAT)

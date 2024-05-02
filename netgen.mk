@@ -35,6 +35,42 @@ NETGEN_LVS_WITH_KLAYOUT=$(NETGEN) \
 	$(NETGEN_RCFILE) \
 	$(NETGEN_LVS_REPORT_KLAYOUT)
 
+
+ifeq (sky130A,$(PDK)) # === SKY130 Specific configurations =====================
+
+define NETGEN_ROUTINE_LVS__DEPENDENCIES =
+set stdcell_dir $(PDK_ROOT)/$(PDK)/libs.ref/sky130_fd_sc_hd/spice
+set schematic_depedency [readnet spice \$$stdcell_dir/sky130_fd_sc_hd.spice]
+set schematic_depedency [readnet spice \$$stdcell_dir/sky130_ef_sc_hd__decap_12.spice \$$schematic_depedency]
+set schematic_depedency [readnet spice \$$stdcell_dir/sky130_ef_sc_hd__fill_8.spice \$$schematic_depedency]
+set schematic_depedency [readnet spice \$$stdcell_dir/sky130_ef_sc_hd__fill_12.spice \$$schematic_depedency]
+set schematic_depedency [readnet spice \$$stdcell_dir/sky130_ef_sc_hd__fill_4.spice \$$schematic_depedency]
+endef
+
+else ifeq (gf180mcuD,$(PDK)) # === GF180 Specific configurations ===============
+
+define NETGEN_ROUTINE_LVS__DEPENDENCIES =
+set stdcell_dir $(PDK_ROOT)/$(PDK)/libs.ref/gf180mcu_fd_sc_mcu7t5v0/spice
+set schematic_depedency [readnet spice \$$stdcell_dir/gf180mcu_fd_sc_mcu7t5v0.spice]
+
+set io_dir $(PDK_ROOT)/$(PDK)/libs.ref/gf180mcu_fd_io/spice
+set schematic_depedency [readnet spice \$$io_dir/gf180mcu_fd_io.spice \$$schematic_depedency]
+endef
+
+endif # === End of Specific configurations ===============
+
+define NETGEN_ROUTINE_LVS =
+set layout \[readnet spice $(LAYOUT_NETLIST_MAGIC)\]
+$(NETGEN_ROUTINE_LVS__DEPENDENCIES)
+readnet spice $(SCH_NETLIST_PREFIX) $$source
+lvs \
+	"$$layout $(TOP)_clean" \
+	"$$source $(TOP)" \
+	$(PDK_ROOT)/$(PDK)/libs.tech/netgen/$(PDK)_setup.tcl \
+	$(NETGEN_LVS_REPORT_MAGIC)
+endef
+
+
 define HELP_ENTRIES += 
 
 Netgen related rules:
@@ -107,3 +143,30 @@ endif
 	@echo Created $(NETGEN_LVS_REPORT_KLAYOUT)
 	@echo Greping relevant results:
 	grep "Netlist" $(NETGEN_LVS_REPORT_KLAYOUT)
+
+NETGEN_LAYOUT_CELL:=$(TOP)_clean
+NETGEN_SCHEMATIC_CELL:=$(TOP)
+
+.PHONY: netgen-lvs-script
+netgen-lvs-script: netgen-validation xschem-netlist-lvs-prefix magic-lvs-extraction
+	netgen -noconsole <<EOF
+	set rcfile $(NETGEN_RCFILE)
+	set reports $(NETGEN_LVS_REPORT_MAGIC)
+
+	set layout_spice $(LAYOUT_NETLIST_MAGIC)
+	set layout_cell $(NETGEN_LAYOUT_CELL)
+
+	set schematic_spice $(SCH_NETLIST_PREFIX)
+	set schematic_cell $(NETGEN_SCHEMATIC_CELL)
+
+	$(NETGEN_ROUTINE_LVS__DEPENDENCIES)
+
+	readnet spice \$$layout_spice
+	readnet spice \$$schematic_spice \$$schematic_depedency
+
+	lvs "\$$layout_spice \$$layout_cell" \
+		"\$$schematic_spice \$$schematic_cell" \
+		\$$rcfile \
+		\$$reports
+
+	EOF

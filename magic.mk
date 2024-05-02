@@ -46,30 +46,74 @@ endef
 else ifeq (gf180mcuD,$(PDK)) # === GF180 Specific configurations ===============
 
 define FLATGLOB =
-gds flatglob pmos*
-gds flatglob via*
-gds flatglob compass*
-gds flatglob rectangle*
-gds flatglob np_*_*
-gds flatglob pn_*_*
-gds flatglob nmoscap_*
-gds flatglob *nmos_*_*[A-Z]*
-gds flatglob *pmos_*_*[A-Z]*
-gds flatglob *mim_*_*[A-Z]*
-gds flatglob *ppolyf_*_*[A-Z]*
-gds flatglob comp018green_*
-gds flatglob *diode_nd2ps_*
-gds flatglob *diode_pd2nw_*
-gds flatglob *cap_nmos_*
-gds flatglob *nfet_*
-gds flatglob *pfet_*
 
+# Each pattern should be the most specific as posible
+# This can erase complete subcircuits if care is not taken
+
+# Fet patterns
+gds flatglob pfet
+gds flatglob pfet$$\[0-9\]*
+gds flatglob nfet
+gds flatglob nfet$$\[0-9\]*
+
+# Passive Devices patterns
+gds flatglob ppolyf_u_high_Rs_resistor
+gds flatglob ppolyf_u_high_Rs_resistor$$\[\0-9\]*
+gds flatglob ppolyf_u_resistor
+gds flatglob ppolyf_u_resistor$$\[\0-9\]*
+
+gds flatglob cap_mim*
+
+gds flatglob \[np\]*_bjt*
+gds flatglob \[np\]*_\[_xp0-9\]*
+
+# Building Devices
+gds flatglob via*
+gds flatglob via_dev$$\[0-9\]*
+gds flatglob gf180mcu.via_stack
+gds flatglob res_dev
+# gds flatglob polyf_res_inst_d09b0e8d
+
+# IO Devices
+gds flatglob *_CDNS_* 
+gds flatglob *comp018green_*
+gds flatglob *GF_NI_*
+gds flatglob GF_NI_BRK*
+gds flatglob x5LM_METAL_RAIL_PAD_60
 gds flatglob POLY_SUB_FILL*
-gds flatglob GF_NI_FILL*
-gds flatglob *_CDNS_*
+gds flatglob ESD_CLAMP_COR
+gds flatglob moscap_corner*
+gds flatglob nmos_6p0
+gds flatglob nmos_clamp_20_50_4*
+gds flatglob pmos_6p0
+gds flatglob pmos_6p0_esd*
+
+
+# Life-savers: Test how to make this work
+# gds flatglob \[_a-zA-Z\]*$$\[0-9\]+
+# gds flatglob compass*
+# gds flatglob rectangle*
+# gds flatglob np_*_*
+# gds flatglob pn_*_*
+# gds flatglob nmoscap_*
+# gds flatglob *nmos_*_*[A-Z]*
+# gds flatglob *pmos_*_*[A-Z]*
+# gds flatglob *mim_*_*[A-Z]*
+# gds flatglob *ppolyf_*_*[A-Z]*
+# gds flatglob *diode_nd2ps_*
+# gds flatglob *diode_pd2nw_*
+# gds flatglob *cap_nmos_*
+# gds flatglob *nfet_*
+# gds flatglob *pfet_*
+
 
 endef
-endif
+
+define MAGIC_ROUTINE_LOAD__READSPICE_ALWAYS =
+readspice $(PDK_ROOT)/$(PDK)/libs.ref/gf180mcu_fd_io/spice/gf180mcu_fd_io.spice
+endef
+
+endif # === SKY130 Specific configurations =====================
 
 # Cells with _FLAT suffix got flattened
 define FLATGLOB +=
@@ -78,10 +122,29 @@ gds flatglob *_FLAT
 endef
 
 
+ifneq (,$(MAGIC_FORCE_FLAT))
+define MAGIC_ROUTINE_LVS__RENAME_OR_FLAT =
+flatten $(GDS_CELL)_clean
+load $(GDS_CELL)_clean
+endef
+
+else
+define MAGIC_ROUTINE_LVS__RENAME_OR_FLAT =
+cellname rename $(GDS_CELL) $(GDS_CELL)_clean
+endef
+
+endif
+
+
 #gds rescale false
 define MAGIC_ROUTINE_LOAD =
 gds ordering on
 gds flatten yes
+gds noduplicates true
+
+if {"$(PDK)" == "sky130A"} {
+	gds read $(PDK_ROOT)/$(PDK)/libs.ref/sky130_fd_sc_hd/gds/sky130_fd_sc_hd.gds
+}
 
 $(FLATGLOB)
 
@@ -101,7 +164,7 @@ select cell $(TOP)
 select top cell
 expand
 
-if {[file exists $(LEF)]} {
+if {[file exists "$(LEF)"]} {
 	lef read $(LEF)
 }
 
@@ -138,7 +201,7 @@ gds drccheck off
 set SUB 0
 $(MAGIC_ROUTINE_LOAD)
 
-cellname rename $(GDS_CELL) $(GDS_CELL)_clean
+$(MAGIC_ROUTINE_LVS__RENAME_OR_FLAT)
 
 extract path extfiles
 extract all
@@ -228,6 +291,8 @@ endif
 magic-edit: magic-validation
 	cd $(GDS_DIR) && $(MAGIC) <<EOF |& tee $(LOG_MAGIC)
 	$(MAGIC_ROUTINE_LOAD)
+	drc euclidean on
+	drc style drc(full)
 	EOF
 
 

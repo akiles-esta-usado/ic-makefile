@@ -2,8 +2,37 @@
 
 #set -ex
 
-OLD_COMMIT=bdc9412b3e468c102d01b7cf6337be06ec6e9c9a/
-NEW_COMMIT=42cd15c469adc1d303ffca4a7d32c29a4564a737/
+OLD_COMMIT=bdc9412b3e468c102d01b7cf6337be06ec6e9c9a
+NEW_COMMIT=42cd15c469adc1d303ffca4a7d32c29a4564a737
+
+see_differences () {
+    FIRST=$1
+    SECOND=$2
+    OUT_FILE=$3
+    
+    # timestamp 1704896540
+    MAG_TIMESTAMP_PATTERN="^timestamp.*[0-9]\+$"
+    # v {xschem version=3.4.4 file_version=1.2
+    XSCHEM_VERSION_PATTERN="xschem.*version=3[.][0-9].*file_version=1.2$"
+
+    DIFF='diff --strip-trailing-cr -r -I $XSCHEM_VERSION_PATTERN -I $MAG_TIMESTAMP_PATTERN'
+    SED='sed -e "s|$FIRST/$1|OLD|" -e "s|$SECOND/$1|NEW|"'
+
+
+
+    cat > $OUT_FILE.md <<  EOL
+# Brief sorted differences:
+OLD: $FIRST/$1
+NEW: $SECOND/$1
+
+$(eval $DIFF -q $FIRST $SECOND | eval $SED | sort || true)
+
+
+# Detailed differences:
+
+$(eval $DIFF $FIRST $SECOND | eval $SED | grep -v "^Only in \|^Binary files " || true)
+EOL
+}
 
 see_differences_gf180 () {
     OLD_PDK=$PDK_ROOT/volare/gf180mcu/versions/$OLD_COMMIT/gf180mcuD
@@ -14,7 +43,7 @@ see_differences_gf180 () {
     # v {xschem version=3.4.4 file_version=1.2
     XSCHEM_VERSION_PATTERN="xschem.*version=3[.][0-9].*file_version=1.2$"
 
-    DIFF='diff -r -I $XSCHEM_VERSION_PATTERN -I $MAG_TIMESTAMP_PATTERN'
+    DIFF='diff --strip-trailing-cr -r -I $XSCHEM_VERSION_PATTERN -I $MAG_TIMESTAMP_PATTERN'
     SED='sed -e "s|$OLD_PDK/$1|OLD|" -e "s|$NEW_PDK/$1|NEW|"'
 
     cat > $2.md <<  EOL
@@ -81,22 +110,36 @@ sky130 () {
 
 ## GF180 ##
 gf180 () {
-    see_differences_gf180 libs.ref/gf180mcu_fd_io           LIBS_REF_IO
-    see_differences_gf180 libs.ref/gf180mcu_fd_pr           LIBS_REF_PR
-    # see_differences_gf180 libs.ref/gf180mcu_fd_sc_mcu7t5v0  LIBS_REF_MCU7T5V0
+    # see_differences_gf180 libs.ref/gf180mcu_fd_io           LIBS_REF_IO
+    # see_differences_gf180 libs.ref/gf180mcu_fd_pr           LIBS_REF_PR
     # see_differences_gf180 libs.ref/gf180mcu_fd_ip_sram      LIBS_REF_SRAM
+    # see_differences_gf180 libs.ref/gf180mcu_fd_sc_mcu7t5v0  LIBS_REF_MCU7T5V0
     # see_differences_gf180 libs.ref/gf180mcu_fd_sc_mcu9t5v0  LIBS_REF_MCU9T5V0
 
 
     see_differences_gf180 libs.tech/klayout     LIBS_TECH_KLAYOUT
-    see_differences_gf180 libs.tech/netgen      LIBS_TECH_NETGEN
-    see_differences_gf180 libs.tech/xschem      LIBS_TECH_XSCHEM
-    see_differences_gf180 libs.tech/magic       LIBS_TECH_MAGIC
-    see_differences_gf180 libs.tech/ngspice     LIBS_TECH_NGSPICE
-    see_differences_gf180 libs.tech/qflow       LIBS_TECH_QFLOW
+    # see_differences_gf180 libs.tech/netgen      LIBS_TECH_NETGEN
+    # see_differences_gf180 libs.tech/xschem      LIBS_TECH_XSCHEM
+    # see_differences_gf180 libs.tech/magic       LIBS_TECH_MAGIC
+    # see_differences_gf180 libs.tech/ngspice     LIBS_TECH_NGSPICE
+    # see_differences_gf180 libs.tech/qflow       LIBS_TECH_QFLOW
     # see_differences_gf180 libs.tech/openlane    LIBS_TECH_OPENLANE
     # see_differences_gf180 libs.tech/xyce        LIBS_TECH_XYCE
+    # see_differences_gf180 libs.tech/irsim       LIBS_TECH_irsim    # Vacio
+    # see_differences_gf180 libs.tech/xcircuit    LIBS_TECH_xcircuit # Vacio
 
+    # COMMIT=42cd15c469adc1d303ffca4a7d32c29a4564a737
+    # COMMIT=bdc9412b3e468c102d01b7cf6337be06ec6e9c9a/
+
+    # see_differences \
+    #     /home/designer/.volare/volare/gf180mcu/versions/$COMMIT/gf180mcuD/libs.tech/klayout/drc \
+    #     /workspaces/Chipalooza2024_TempSensor_AC3E/PROBLEMS/globalfoundries-pdk-libs-gf180mcu_fd_pv-main/klayout/drc/ \
+    #     GF180_DRC_DIFF
+
+    # see_differences \
+    #     /home/designer/.volare/volare/gf180mcu/versions/$COMMIT/gf180mcuD/libs.tech/klayout//lvs \
+    #     /workspaces/Chipalooza2024_TempSensor_AC3E/PROBLEMS/globalfoundries-pdk-libs-gf180mcu_fd_pv-main/klayout/lvs/ \
+    #     GF180_LVS_DIFF
 }
 
 gf180

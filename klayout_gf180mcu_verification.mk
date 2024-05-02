@@ -89,106 +89,73 @@ endif
 
 # feol, beol, connectivity, density, antenna, offgrid
 
-KLAYOUT_SCRIPT_DRC_PDK:=python $(KLAYOUT_HOME)/drc/run_drc.py \
+KLAYOUT_DRC_SCRIPT_EFABLESS=python $(KLAYOUT_HOME)/drc/run_drc.py \
 	--variant=D \
-	--run_mode=flat \
+	--run_mode=$(KLAYOUT_DRC_RUN_MODE) \
 	--verbose \
 	--thr=$(NPROCS) \
 	--run_dir=$(REPORT_DIR) \
-	--path $(GDS) \
-	--topcell=$(GDS_CELL)
+	--topcell=$(CELL) \
+	--path $(GDS)
+
+# == Rules - DRC Building Blocks == #
 
 # See https://open-source-silicon.slack.com/archives/C016HUV935L/p1710737146725369
-KLAYOUT_SCRIPT_DRC_PDK_ANTENNA_ONLY:=$(KLAYOUT_SCRIPT_DRC_PDK) \
-	--antenna_only \
-	--no_offgrid
 
-KLAYOUT_SCRIPT_DRC_PDK_DENSITY_ONLY:=$(KLAYOUT_SCRIPT_DRC_PDK) \
-	--density_only \
-	--no_connectivity \
-	--no_offgrid
-
-KLAYOUT_SCRIPT_DRC_PDK_BEOL:=$(KLAYOUT_SCRIPT_DRC_PDK) \
-	--no_feol
-
-KLAYOUT_SCRIPT_DRC_PDK_FEOL:=$(KLAYOUT_SCRIPT_DRC_PDK) \
-	--no_beol
+.PHONY: klayout-drc-beol
+klayout-drc-beol: klayout-validation
+	$(KLAYOUT_DRC_SCRIPT_EFABLESS) \
+		--no_feol \
+		--no_offgrid \
+		|| true
+	mv $(REPORT_DIR)/$(GDS_CELL)_main.lyrdb $(REPORT_DIR)/$(KLAYOUT_REPORT_PREFIX)_beol.lyrdb
 
 
-.PHONY: klayout-drc-efabless
-klayout-drc-efabless: klayout-validation
-	rm $(REPORT_DIR)/*.lyrdb
-
-	$(KLAYOUT_SCRIPT_DRC_PDK_BEOL) \
-		|& tee $(LOG_KLAYOUT)_drc_efabless_beol.log || true
-	mv $(REPORT_DIR)/$(TOP)_main.lyrdb $(REPORT_DIR)/drc_efabless_$(TOP)_beol.lyrdb
-
-	$(KLAYOUT_SCRIPT_DRC_PDK_FEOL) \
-		|& tee $(LOG_KLAYOUT)_drc_efabless_feol.log || true
-	mv $(REPORT_DIR)/$(TOP)_main.lyrdb $(REPORT_DIR)/drc_efabless_$(TOP)_feol.lyrdb
-
-	$(KLAYOUT_SCRIPT_DRC_PDK_DENSITY_ONLY) \
-		|& tee $(LOG_KLAYOUT)_drc_efabless_density.log || true
-	mv $(REPORT_DIR)/$(TOP)_density.lyrdb $(REPORT_DIR)/drc_efabless_$(TOP)_density.lyrdb
-
-	$(KLAYOUT_SCRIPT_DRC_PDK_ANTENNA_ONLY) \
-		|& tee $(LOG_KLAYOUT)_drc_efabless_antenna.log || true
-	mv $(REPORT_DIR)/$(TOP)_antenna.lyrdb $(REPORT_DIR)/drc_efabless_$(TOP)_antenna.lyrdb
-	
-
-# -rd input
-# -rd topcell
-# -rd report
-# -rd table_name
-# -rd conn_drc
-# -rd split_deep
-# -rd wedge
-# -rd ball
-# -rd gold
-# -rd mim_option
-# -rd offgrid
-# -rd thr
-# -rd verbose
-# -rd run_mode
-# -rd metal_top
-# -rd metal_level
-# -rd feol
-# -rd beol
-# -rd slow_via
-KLAYOUT_SCRIPT_DRC_PRECHECK:=$(KLAYOUT) -b \
-	-r $(KLAYOUT_HOME)/drc/gf180mcuD_mr.drc \
-	-rd mim_option=B \
-	-rd run_mode=flat \
-	-rd verbose=true \
-	-rd input=$(GDS) \
-	-rd topcell=$(GDS_CELL) \
-	-rd thr=$(NPROCS) \
-	-rd conn_drc=true \
-	-rd split_deep=true \
-	-rd wedge=true \
-	-rd ball=true \
-	-rd gold=true \
-	-rd offgrid=true
+.PHONY: klayout-drc-feol
+klayout-drc-feol: klayout-validation
+	$(KLAYOUT_DRC_SCRIPT_EFABLESS) \
+		--no_beol \
+		--no_offgrid \
+		|| true
+	mv $(REPORT_DIR)/$(GDS_CELL)_main.lyrdb $(REPORT_DIR)/$(KLAYOUT_REPORT_PREFIX)_feol.lyrdb
 
 
-.PHONY: klayout-drc-precheck
-klayout-drc-precheck:
-	$(KLAYOUT_SCRIPT_DRC_PRECHECK) \
-		-rd report=$(REPORT_DIR)/precheck_beol_$(TOP).lyrdb \
-		-rd beol=true \
-		-rd feol=false \
-		|& tee $(LOG_KLAYOUT)_drc_precheck_beol.log || true
+.PHONY: klayout-drc-density
+klayout-drc-density: klayout-validation
+	$(KLAYOUT_DRC_SCRIPT_EFABLESS) \
+		--density_only \
+		--no_connectivity \
+		--no_offgrid \
+		|| true
+	mv $(REPORT_DIR)/$(GDS_CELL)_density.lyrdb $(REPORT_DIR)/$(KLAYOUT_REPORT_PREFIX)_density.lyrdb
 
-	$(KLAYOUT_SCRIPT_DRC_PRECHECK) \
-		-rd report=$(REPORT_DIR)/precheck_feol_$(TOP).lyrdb \
-		-rd beol=false \
-		-rd feol=true \
-		|& tee $(LOG_KLAYOUT)_drc_precheck_feol.log || true
 
+.PHONY: klayout-drc-antenna
+klayout-drc-antenna: klayout-validation
+	$(KLAYOUT_DRC_SCRIPT_EFABLESS) \
+		--antenna_only \
+		--no_offgrid \
+		|| true
+	mv $(REPORT_DIR)/$(GDS_CELL)_antenna.lyrdb $(REPORT_DIR)/$(KLAYOUT_REPORT_PREFIX)_antenna.lyrdb
+
+
+.PHONY: klayout-drc-offgrid
+klayout-drc-offgrid: klayout-validation
+	$(KLAYOUT_DRC_SCRIPT_EFABLESS) \
+		--table=geom \
+		|| true
+	mv $(REPORT_DIR)/$(GDS_CELL)_geom.lyrdb $(REPORT_DIR)/$(KLAYOUT_REPORT_PREFIX)_offgrid.lyrdb
+
+# == Rules - DRC Interface == #
 
 .PHONY: klayout-drc-only
 klayout-drc-only: klayout-validation
-	$(RM) $(REPORT_DIR)/*.lyrdb
+	rm $(ALL_LYRDB) || true
+	$(MAKE) klayout-drc-beol klayout-drc-feol klayout-drc-density klayout-drc-antenna klayout-drc-offgrid
 
-	$(MAKE) klayout-drc-efabless
-	#$(MAKE) klayout-drc-precheck
+
+.PHONY: klayout-drc-full
+klayout-drc-full: klayout-validation
+	rm $(ALL_LYRDB) || true
+	$(MAKE) DRC_FLAT=Y klayout-drc-beol klayout-drc-feol klayout-drc-density klayout-drc-antenna
+	$(MAKE) DRC_FLAT=N klayout-drc-offgrid

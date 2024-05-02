@@ -174,6 +174,7 @@ if [ "$klayout_gf180_conf_not_modified" == "" ]; then
     sed -i "s\\$ORIGINAL\\$REPLACE\g" $FILEPATH
 
     # Add Gabriel Maranhao klayout colors
-
-    wget -O $KLAYOUT_HOME/tech/gf180mcu.lyp https://raw.githubusercontent.com/ChipUSM/osic-stacks/main/stacks/chipathon-tools/scripts/gf180mcu.lyp
+    mv $KLAYOUT_HOME/tech/gf180mcu.lyp $KLAYOUT_HOME/tech/gf180mcu.bkp.lyp
+    # Original path: https://raw.githubusercontent.com/ChipUSM/osic-stacks/main/stacks/chipathon-tools/scripts/gf180mcu.lyp
+    # Copy the ones on ic-makefile/templates/gf180mcu/
 fi

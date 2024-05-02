@@ -168,6 +168,7 @@ programs/*
 **/cace/*.sym
 **/netlist
 **/ngspice
+**/extfiles
 
 # Code Models
 **/*_obj_dir/*
