@@ -184,6 +184,13 @@ klayout-padring: klayout-validation
 		$(GDS)
 
 
+.PHONY: klayout-padring-2
+klayout-padring-2: klayout-validation
+	$(KLAYOUT) -t -e -rr $(_IC_MAKEFILE)/scripts/padring-2.py \
+		-rd padring_file=$(PADRING_FILE) \
+		$(GDS)
+
+
 .PHONY: klayout-extract-topcells
 klayout-extract-topcells: klayout-validation
 	$(KLAYOUT) -zz \
