@@ -15,18 +15,7 @@
 
 # == Variables == #
 
-LOG_KLAYOUT=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_$(TOP).log
-LOG_KLAYOUT_LVS=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_lvs_$(TOP).log
-LOG_KLAYOUT_DRC_EFABLES=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_drc_efabless_$(TOP).log
-LOG_KLAYOUT_DRC_PRECHECK=$(LOG_DIR)/$(TIMESTAMP_TIME)_klayout_drc_precheck_$(TOP).log
-
 LOG_KLAYOUT=$(LOG_DIR)/$(TIMESTAMP_TIME)_$(TOP)_klayout
-
-ALL_LYRDB:=$(filter %.lyrdb,$(wildcard $(REPORT_DIR)/*))
-ALL_LVSDB:=$(filter %.lvsdb,$(wildcard $(REPORT_DIR)/*))
-
-PADRING_FILE:=$(wildcard $(GDS_DIR)/*.yaml) \
-	$(wildcard $(GDS_DIR)/*.yml)
 
 # Sometimes, drc/lvs should be performed on FLAT run mode.
 LVS_FLAT=
@@ -36,6 +25,9 @@ DRC_FLAT=
 # This variable is case sensitive, VSS != vss
 GND_NAME:=VSS
 
+LVS_CELL:=$(GDS_CELL)
+DRC_CELL:=$(GDS_CELL)
+
 ifneq (,$(wildcard $(KLAYOUT_RCFILE)))
 KLAYOUT=klayout -c $(KLAYOUT_RCFILE) -t
 else
@@ -43,28 +35,30 @@ $(call WARNING_MESSAGE, klayoutrc not found)
 KLAYOUT=klayout -t
 endif
 
-# By default: Use deep (faster)
-# If value is N: Use deep
-# If has other value: Use flat (Slower but most accurate)
-ifeq (N,$(DRC_FLAT))
-DRC_FLAT=
-endif
-ifneq (,$(DRC_FLAT))
-KLAYOUT_DRC_RUN_MODE=flat
-else
+# By default use deep. Use FLAT only if
+# - Value is different than ""
+# - Value is not N
 KLAYOUT_DRC_RUN_MODE=deep
+ifneq (,$(DRC_FLAT))
+ifneq (N,$(DRC_FLAT))
+KLAYOUT_DRC_RUN_MODE=flat
+endif
 endif
 
-ifeq (N,$(LVS_FLAT))
-LVS_FLAT=
-endif
-ifneq (,$(LVS_FLAT))
-KLAYOUT_LVS_RUN_MODE=flat
-else
 KLAYOUT_LVS_RUN_MODE=deep
+ifneq (,$(LVS_FLAT))
+ifneq (N,$(LVS_FLAT))
+KLAYOUT_LVS_RUN_MODE=flat
+endif
 endif
 
-KLAYOUT_REPORT_PREFIX=drc_efabless_$(GDS_CELL)_$(KLAYOUT_DRC_RUN_MODE)
+KLAYOUT_DRC_REPORT_PREFIX=$(REPORT_DIR)/drc_efabless_$(GDS_CELL)_$(KLAYOUT_DRC_RUN_MODE)
+
+ALL_LYRDB:=$(filter %.lyrdb,$(wildcard $(REPORT_DIR)/*))
+ALL_LVSDB:=$(filter %.lvsdb,$(wildcard $(REPORT_DIR)/*))
+
+PADRING_FILE:=$(wildcard $(GDS_DIR)/*.yaml) \
+	$(wildcard $(GDS_DIR)/*.yml)
 
 
 # == Variables - Documentation == #

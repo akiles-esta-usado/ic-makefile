@@ -294,37 +294,64 @@ create-module:
 	$(MAKE) create-schematic
 	$(MAKE) create-layout
 
-.PHONY: validate-sample-klayout-drc
-validate-sample-klayout-drc:
-	make TOP=bjt                   DRC_FLAT=Y klayout-drc # 43 Density
-	make TOP=bjt_fast              DRC_FLAT=Y klayout-drc # 10 Density
+
+.PHONY: validate-sample-klayout-drc-deep
+validate-sample-klayout-drc-deep:
+	make TOP=bjt                   DRC_FLAT=N klayout-drc # Density/227
+	make TOP=bjt_fast              DRC_FLAT=N klayout-drc # Density/54
+	make TOP=mim_capacitor         DRC_FLAT=N klayout-drc # 0
+	make TOP=inv_sample            DRC_FLAT=N klayout-drc # Density/18
+	make TOP=nmos5f                DRC_FLAT=N klayout-drc # Density/25
+	make TOP=pmos1f                DRC_FLAT=N klayout-drc # Density/6
+	make TOP=pmos5f                DRC_FLAT=N klayout-drc # Density/24
+	make TOP=resistor_core         DRC_FLAT=N klayout-drc # Density/7
+	make TOP=resistor_ppolyf_u_1k  DRC_FLAT=N klayout-drc # Density/6
+
+
+.PHONY: validate-sample-klayout-drc-flat
+validate-sample-klayout-drc-flat:
+	make TOP=bjt                   DRC_FLAT=Y klayout-drc # Density/40
+	make TOP=bjt_fast              DRC_FLAT=Y klayout-drc # Density/10
 	make TOP=mim_capacitor         DRC_FLAT=Y klayout-drc # 0
-	make TOP=inv_sample            DRC_FLAT=Y klayout-drc # 7 Density
-	make TOP=nmos5f                DRC_FLAT=Y klayout-drc # 9 Density
-	make TOP=pmos1f                DRC_FLAT=Y klayout-drc # 5 Density
-	make TOP=pmos5f                DRC_FLAT=Y klayout-drc # 9 Density
-	make TOP=resistor_core         DRC_FLAT=Y klayout-drc # 4 Density
-	make TOP=resistor_ppolyf_u_1k  DRC_FLAT=Y klayout-drc # 3 Density
+	make TOP=inv_sample            DRC_FLAT=Y klayout-drc # Density/7
+	make TOP=nmos5f                DRC_FLAT=Y klayout-drc # Density/9
+	make TOP=pmos1f                DRC_FLAT=Y klayout-drc # Density/5
+	make TOP=pmos5f                DRC_FLAT=Y klayout-drc # Density/9
+	make TOP=resistor_core         DRC_FLAT=Y klayout-drc # Density/4
+	make TOP=resistor_ppolyf_u_1k  DRC_FLAT=Y klayout-drc # Density/3
 
 
-.PHONY: validate-sample-klayout-lvs
-validate-sample-klayout-lvs:
-	make TOP=bjt                   GND_NAME=C   klayout-lvs-only # Netlist don't match (C == S)
-	make TOP=bjt_fast              GND_NAME=C   klayout-lvs-only # Netlist match
-	make TOP=mim_capacitor                      klayout-lvs-only # Netlist match
-	make TOP=inv_sample            GND_NAME=vss klayout-lvs-only # Netlist match
-	make TOP=nmos5f                GND_NAME=S   klayout-lvs-only # Netlist match
-	make TOP=pmos1f                GND_NAME=D   klayout-lvs-only # Netlist match
-	make TOP=pmos5f                GND_NAME=D   klayout-lvs-only # Netlist match
-	make TOP=resistor_core         GND_NAME=B   klayout-lvs-only # Netlist match
-	make TOP=resistor_ppolyf_u_1k  GND_NAME=B   klayout-lvs-only # Netlist match
+.PHONY: validate-sample-klayout-lvs-deep
+validate-sample-klayout-lvs-deep:
+	make TOP=bjt                   GND_NAME=C   LVS_FLAT=N klayout-lvs-only # ?  Netlist don't match (C == S)
+	make TOP=bjt_fast              GND_NAME=vss LVS_FLAT=N klayout-lvs-only # Netlist match
+	make TOP=mim_capacitor                      LVS_FLAT=N klayout-lvs-only # Netlist match
+	make TOP=inv_sample            GND_NAME=vss LVS_FLAT=N klayout-lvs-only # Netlist match
+	make TOP=nmos5f                GND_NAME=S   LVS_FLAT=N klayout-lvs-only # Netlist match
+	make TOP=pmos1f                GND_NAME=D   LVS_FLAT=N klayout-lvs-only # Netlist match
+	make TOP=pmos5f                GND_NAME=D   LVS_FLAT=N klayout-lvs-only # Netlist match
+	make TOP=resistor_core         GND_NAME=B   LVS_FLAT=N klayout-lvs-only # Netlist match
+	make TOP=resistor_ppolyf_u_1k  GND_NAME=B   LVS_FLAT=N klayout-lvs-only # Netlist match
+
+
+.PHONY: validate-sample-klayout-lvs-flat
+validate-sample-klayout-lvs-flat:
+	make TOP=bjt                   GND_NAME=C   LVS_FLAT=Y klayout-lvs-only # Netlist don't match (C == S)
+	make TOP=bjt_fast              GND_NAME=C   LVS_FLAT=Y klayout-lvs-only # Netlist match
+	make TOP=mim_capacitor                      LVS_FLAT=Y klayout-lvs-only # Netlist match
+	make TOP=inv_sample            GND_NAME=vss LVS_FLAT=Y klayout-lvs-only # Netlist match
+	make TOP=nmos5f                GND_NAME=S   LVS_FLAT=Y klayout-lvs-only # Netlist match
+	make TOP=pmos1f                GND_NAME=D   LVS_FLAT=Y klayout-lvs-only # Netlist match
+	make TOP=pmos5f                GND_NAME=D   LVS_FLAT=Y klayout-lvs-only # Netlist match
+	make TOP=resistor_core         GND_NAME=B   LVS_FLAT=Y klayout-lvs-only # Netlist match
+	make TOP=resistor_ppolyf_u_1k  GND_NAME=B   LVS_FLAT=Y klayout-lvs-only # Netlist match
 
 
 .PHONY: validate-sample-magic-drc
 validate-sample-magic-drc:
 	# Evaluate magic drc on drc manager
 	make TOP=bjt           			magic # 20 (P-diffusion and N-ohmic must be over N-well or deep N-well)
-	make TOP=bjt_fast      			magic # 5 (P-diffusion and N-ohmic must be over N-well or deep N-well)
+	make TOP=bjt_fast      			magic # 5  (P-diffusion and N-ohmic must be over N-well or deep N-well)
 	make TOP=mim_capacitor 			magic # 0
 	make TOP=inv_sample    			magic # 0
 	make TOP=nmos5f        			magic # 0
@@ -337,41 +364,52 @@ validate-sample-magic-drc:
 .PHONY: validate-sample-magic-lvs
 validate-sample-magic-lvs:
 	# Magic Validation
-	make TOP=bjt           			magic-lvs-extraction # Works
+	make TOP=bjt           			magic-lvs-extraction # ? Works
 	## - Ports "S" and "C" are electrically shorted.
 	## - Warning:  Ports "S" and "C" are electrically shorted.
 	## - Device has multiple lengths:  scaling all widths to length 444
-	make TOP=bjt_fast      			magic-lvs-extraction # Works
+	make TOP=bjt_fast      			magic-lvs-extraction # ? Works
 	## - Warning:  Ports "C" and "S" are electrically shorted.
-	make TOP=mim_capacitor 			magic-lvs-extraction # Works
-	make TOP=inv_sample    			magic-lvs-extraction # Works
-	make TOP=nmos5f        			magic-lvs-extraction # Works
-	make TOP=pmos1f        			magic-lvs-extraction # Works
-	make TOP=pmos5f        			magic-lvs-extraction # Works
-	make TOP=resistor_core 			magic-lvs-extraction # Works
-	make TOP=resistor_ppolyf_u_1k   magic-lvs-extraction # Works
+	make TOP=mim_capacitor 			magic-lvs-extraction # ? Works
+	make TOP=inv_sample    			magic-lvs-extraction # ? Works
+	make TOP=nmos5f        			magic-lvs-extraction # ? Works
+	make TOP=pmos1f        			magic-lvs-extraction # ? Works
+	make TOP=pmos5f        			magic-lvs-extraction # ? Works
+	make TOP=resistor_core 			magic-lvs-extraction # ? Works
+	make TOP=resistor_ppolyf_u_1k   magic-lvs-extraction # ? Works
 
-	make TOP=bjt           			netgen-lvs-magic # Top level cell failed pin matching
-	make TOP=bjt_fast      			netgen-lvs-magic # Top level cell failed pin matching.
-	make TOP=mim_capacitor 			netgen-lvs-magic # Circuits match uniquely.
-	make TOP=inv_sample    			netgen-lvs-magic # Circuits match uniquely.
-	make TOP=nmos5f        			netgen-lvs-magic # Circuits match uniquely.
-	make TOP=pmos1f        			netgen-lvs-magic # Circuits match uniquely.
-	make TOP=pmos5f        			netgen-lvs-magic # Circuits match uniquely.
-	make TOP=resistor_core 			netgen-lvs-magic # Circuits match uniquely.
-	make TOP=resistor_ppolyf_u_1k   netgen-lvs-magic # Circuits match uniquely.
+	make TOP=bjt           			netgen-lvs-magic GND_NAME=vss # ? Top level cell failed pin matching
+	make TOP=bjt_fast      			netgen-lvs-magic GND_NAME=vss # ? Top level cell failed pin matching.
+	make TOP=mim_capacitor 			netgen-lvs-magic GND_NAME=vss # ? Circuits match uniquely.
+	make TOP=inv_sample    			netgen-lvs-magic GND_NAME=vss # ? Circuits match uniquely.
+	make TOP=nmos5f        			netgen-lvs-magic GND_NAME=vss # ? Circuits match uniquely.
+	make TOP=pmos1f        			netgen-lvs-magic GND_NAME=vss # ? Circuits match uniquely.
+	make TOP=pmos5f        			netgen-lvs-magic GND_NAME=vss # ? Circuits match uniquely.
+	make TOP=resistor_core 			netgen-lvs-magic GND_NAME=vss # ? Circuits match uniquely.
+	make TOP=resistor_ppolyf_u_1k   netgen-lvs-magic GND_NAME=vss # ? Circuits match uniquely.
 
 .PHONY: validate-sample-magic-klayout-compatibility
 validate-sample-magic-klayout-compatibility:
-	make TOP=bjt           			netgen-lvs-klayout # Top level cell failed pin matching.
-	make TOP=bjt_fast               netgen-lvs-klayout # Top level cell failed pin matching.
-	make TOP=mim_capacitor 			netgen-lvs-klayout # Top level cell failed pin matching.
-	make TOP=inv_sample    			netgen-lvs-klayout # Circuits match uniquely. 
-	make TOP=nmos5f        			netgen-lvs-klayout # Circuits match uniquely. 
-	make TOP=pmos1f        			netgen-lvs-klayout # Circuits match uniquely. 
-	make TOP=pmos5f        			netgen-lvs-klayout # Circuits match uniquely. 
-	make TOP=resistor_core 			netgen-lvs-klayout # Circuits match uniquely. Property errors were found.
-	make TOP=resistor_ppolyf_u_1k   netgen-lvs-klayout # Circuits match uniquely. Property errors were found.
+	make TOP=bjt           			netgen-lvs-klayout # ? Top level cell failed pin matching.
+	make TOP=bjt_fast               netgen-lvs-klayout # ? Top level cell failed pin matching.
+	make TOP=mim_capacitor 			netgen-lvs-klayout # ? Top level cell failed pin matching.
+	make TOP=inv_sample    			netgen-lvs-klayout # ? Circuits match uniquely. 
+	make TOP=nmos5f        			netgen-lvs-klayout # ? Circuits match uniquely. 
+	make TOP=pmos1f        			netgen-lvs-klayout # ? Circuits match uniquely. 
+	make TOP=pmos5f        			netgen-lvs-klayout # ? Circuits match uniquely. 
+	make TOP=resistor_core 			netgen-lvs-klayout # ? Circuits match uniquely. Property errors were found.
+	make TOP=resistor_ppolyf_u_1k   netgen-lvs-klayout # ? Circuits match uniquely. Property errors were found.
 
 	# PROBLEM: It seems that klayout and magic uses different order on mimcap pads.
 	# If I invert IN1 and IN2, lvs works only for one (netgen magic, netgen klayout)
+
+compare-klayout-magic-netlists:
+	make TOP=bjt           			GND_NAME=vss LVS_FLAT=Y klayout-compare-magic # ? Don't match
+	make TOP=bjt_fast               GND_NAME=vss LVS_FLAT=Y klayout-compare-magic # ? Don't match
+	make TOP=inv_sample    			GND_NAME=vss LVS_FLAT=Y klayout-compare-magic # ? Match
+	make TOP=mim_capacitor 			GND_NAME=vss LVS_FLAT=Y klayout-compare-magic # ? Match
+	make TOP=nmos5f        			GND_NAME=S   LVS_FLAT=Y klayout-compare-magic # ? Don't match
+	make TOP=pmos5f        			GND_NAME=S   LVS_FLAT=Y klayout-compare-magic # ? Don't match
+	make TOP=pmos1f        			GND_NAME=vss LVS_FLAT=Y klayout-compare-magic # ? Match
+	make TOP=resistor_core 			GND_NAME=vss LVS_FLAT=Y klayout-compare-magic # ? Match
+	make TOP=resistor_ppolyf_u_1k   GND_NAME=vss LVS_FLAT=Y klayout-compare-magic # ? Match

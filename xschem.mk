@@ -89,6 +89,8 @@ ifeq (,$(TOP))
 	$(XSCHEM) 0_top.sch |& tee $(LOG_XSCHEM)
 else
 	$(XSCHEM) --netlist_path $(SCH_DIR) $(SCH) |& tee $(LOG_XSCHEM)
+
+	echo $(SCH)
 endif
 
 
@@ -96,10 +98,14 @@ endif
 xschem-tb: xschem-validation
 	$(XSCHEM) --netlist_path $(TB_DIR) $(TB) |& tee $(LOG_XSCHEM)
 
+	echo $(TB)
+
 
 .PHONY: xschem-sym
 xschem-sym: xschem-validation
 	$(XSCHEM) --netlist_path $(SCH_DIR) $(SYM) |& tee $(LOG_XSCHEM)
+
+	echo $(SYM)
 
 
 .PHONY: xschem-netlist
@@ -121,6 +127,8 @@ xschem-netlist-lvs-prefix: xschem-validation
 		--preinit 'set lvs_netlist 1; set spiceprefix 1' \
 		$(SCH) |& tee $(LOG_XSCHEM_NETLIST_PREFIX)
 
+	echo $(SCH_NETLIST_PREFIX)
+
 
 # Used in Klayout
 .PHONY: xschem-netlist-lvs-noprefix
@@ -131,6 +139,8 @@ xschem-netlist-lvs-noprefix: xschem-validation
 		--preinit 'set lvs_netlist 1; set spiceprefix 0' \
 		$(SCH) |& tee $(LOG_XSCHEM_NETLIST_NOPREFIX)
 
+	echo $(SCH_NETLIST_NOPREFIX)
+
 
 .PHONY: xschem-netlist-lvs-noprefix-fixed
 xschem-netlist-lvs-noprefix-fixed: xschem-validation xschem-netlist-lvs-noprefix
@@ -138,3 +148,5 @@ xschem-netlist-lvs-noprefix-fixed: xschem-validation xschem-netlist-lvs-noprefix
 	sed -i '/C.*cap_mim_2f0_m4m5_noshield/s/c_length/L/' $(SCH_NETLIST_NOPREFIX)
 	sed -i '/R.*ppoly/s/r_width/W/' $(SCH_NETLIST_NOPREFIX)
 	sed -i '/R.*ppoly/s/r_length/L/' $(SCH_NETLIST_NOPREFIX)
+
+	echo $(SCH_NETLIST_NOPREFIX)

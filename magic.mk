@@ -15,9 +15,9 @@
 
 .ONESHELL:
 
-# Files, directories and Aliases
-################################
+# == Variables == #
 
+# ---------------------------------------------------------------------------- #
 LOG_MAGIC=$(LOG_DIR)/$(TIMESTAMP_TIME)_magic_$(TOP).log
 LOG_MAGIC_LVS=$(LOG_DIR)/$(TIMESTAMP_TIME)_magic_lvs_$(TOP).log
 LOG_MAGIC_PEX=$(LOG_DIR)/$(TIMESTAMP_TIME)_magic_pex_$(TOP).log
@@ -27,6 +27,56 @@ MAGIC_BATCH=$(MAGIC) -nowindow -dnull
 
 MAG_DIR=$(abspath $(MODULE_DIR)/mag)
 MAG=$(abspath $(MAG_DIR)/$(TOP).mag)
+
+MAGIC_REPORT_DRC=$(REPORT_DIR)/magic_drc.log
+
+# ---------------------------------------------------------------------------- #
+# Both Magic and Klayout could define a substrate naming.
+# For PEX extraction this value should be 0.
+MAGIC_ROUTINE__SET_SUB=set SUB 0
+ifneq (,$(GND_NAME))
+MAGIC_ROUTINE__SET_SUB=set SUB $(GND_NAME)
+endif
+
+# ---------------------------------------------------------------------------- #
+# https://open-source-silicon.slack.com/archives/C04MJUYP99V/p1711644686080599
+# From Tim Edwards:
+# - cthresh:    won't make the simulation faster, but 0.1 could avoid "trivially small parasitics"
+# - rthresh:    Never use. Generates lumped resistance and those are not handled by the tools.
+# - extresists: Produces parasitic resistance.
+# - extresist tolerance: Might reduce parasitic resistance count, but should be set for each case.
+# - set SUB 0: Always use it when doing PEX extraction.
+#
+# Origintal tolerance set to "all"
+PEX_TOLERANCE:=
+
+MAGIC_ROUTINE_PEX__TOLERANCE=tolerance 10
+ifneq (,$(PEX_TOLERANCE))
+ifeq (all,$(PEX_TOLERANCE))
+MAGIC_ROUTINE_PEX__TOLERANCE=all
+else
+MAGIC_ROUTINE_PEX__TOLERANCE=tolerance $(PEX_TOLERANCE)
+endif
+endif
+
+# ---------------------------------------------------------------------------- #
+# LVS Extraction could be done on a flatted design.
+MAGIC_FORCE_FLAT:=
+
+MAGIC_ROUTINE_LVS__RENAME_OR_FLAT=cellname rename $(GDS_CELL) $(GDS_CELL)_clean
+ifneq (,$(MAGIC_FORCE_FLAT))
+define MAGIC_ROUTINE_LVS__RENAME_OR_FLAT =
+flatten $(GDS_CELL)_clean
+load $(GDS_CELL)_clean
+endef
+endif
+
+# ---------------------------------------------------------------------------- #
+# Cells with _FLAT suffix got flattened
+define FLATGLOB +=
+
+gds flatglob *_FLAT*
+endef
 
 
 ifeq (sky130A,$(PDK)) # === SKY130 Specific configurations =====================
@@ -63,31 +113,39 @@ gds flatglob ppolyf_u_resistor
 gds flatglob ppolyf_u_resistor$$\[\0-9\]*
 
 gds flatglob cap_mim*
+gds flatglob cap_mim$$\[\0-9\]*
 
 gds flatglob \[np\]*_bjt*
 gds flatglob \[np\]*_\[_xp0-9\]*
 
 # Building Devices
 gds flatglob via*
+gds flatglob via-*
+gds flatglob via_*
 gds flatglob via_dev$$\[0-9\]*
 gds flatglob gf180mcu.via_stack
 gds flatglob res_dev
+gds flatglob res_dev$$\[0-9\]*
 # gds flatglob polyf_res_inst_d09b0e8d
 
 # IO Devices
-gds flatglob *_CDNS_* 
+gds flatglob *_CDNS_*
 gds flatglob *comp018green_*
+gds flatglob *_metal_stack
 gds flatglob *GF_NI_*
-gds flatglob GF_NI_BRK*
-gds flatglob x5LM_METAL_RAIL_PAD_60
-gds flatglob POLY_SUB_FILL*
-gds flatglob ESD_CLAMP_COR
+gds flatglob *_METAL_RAIL*
 gds flatglob moscap_corner*
-gds flatglob nmos_6p0
-gds flatglob nmos_clamp_20_50_4*
-gds flatglob pmos_6p0
+gds flatglob Bondpad_*
 gds flatglob pmos_6p0_esd*
-
+gds flatglob GR_NMOS*
+gds flatglob POLY_.*FILL*
+gds flatglob POLY_SUB_FILL*
+gds flatglob nmos_clamp_20_50_4*
+gds flatglob ESD_CLAMP_COR
+gds flatglob moscap_routing
+gds flatglob power_via_cor_*
+gds flatglob POWER_RAIL_COR*
+gds flatglob top_rout*
 
 # Life-savers: Test how to make this work
 # gds flatglob \[_a-zA-Z\]*$$\[0-9\]+
@@ -115,38 +173,24 @@ endef
 
 endif # === SKY130 Specific configurations =====================
 
-# Cells with _FLAT suffix got flattened
-define FLATGLOB +=
+# == Variables - Magic routine definitions == #
 
-gds flatglob *_FLAT
-endef
-
-
-ifneq (,$(MAGIC_FORCE_FLAT))
-define MAGIC_ROUTINE_LVS__RENAME_OR_FLAT =
-flatten $(GDS_CELL)_clean
-load $(GDS_CELL)_clean
-endef
-
-else
-define MAGIC_ROUTINE_LVS__RENAME_OR_FLAT =
-cellname rename $(GDS_CELL) $(GDS_CELL)_clean
-endef
-
-endif
-
-
+# ---------------------------------------------------------------------------- #
 #gds rescale false
 define MAGIC_ROUTINE_LOAD =
 gds ordering on
 gds flatten yes
 gds noduplicates true
+drc euclidean on
+
+$(FLATGLOB)
 
 if {"$(PDK)" == "sky130A"} {
 	gds read $(PDK_ROOT)/$(PDK)/libs.ref/sky130_fd_sc_hd/gds/sky130_fd_sc_hd.gds
+} elseif {"$(PDK)" == "gf180mcuD"} {
+	gds read $(PDK_ROOT)/$(PDK)/libs.ref/gf180mcu_fd_io/gds/gf180mcu_ef_io.gds
+	gds read $(PDK_ROOT)/$(PDK)/libs.ref/gf180mcu_fd_io/gds/gf180mcu_fd_io.gds
 }
-
-$(FLATGLOB)
 
 gds read $(GDS)
 load $(TOP)
@@ -176,10 +220,9 @@ expand
 puts "layout loaded :)"
 endef
 
-MAGIC_REPORT_DRC=$(REPORT_DIR)/magic_drc.log
+# ---------------------------------------------------------------------------- #
 define MAGIC_ROUTINE_DRC =
 $(MAGIC_ROUTINE_LOAD)
-drc euclidean on
 drc style drc(full)
 drc check
 
@@ -194,11 +237,11 @@ drc listall why
 quit -noprompt
 endef
 
-
+# ---------------------------------------------------------------------------- #
 define MAGIC_ROUTINE_LVS =
 drc off
 gds drccheck off
-set SUB 0
+$(MAGIC_ROUTINE__SET_SUB)
 $(MAGIC_ROUTINE_LOAD)
 
 $(MAGIC_ROUTINE_LVS__RENAME_OR_FLAT)
@@ -212,25 +255,11 @@ puts "Created netlist file $(LAYOUT_NETLIST_MAGIC)"
 quit -noprompt
 endef
 
-# https://open-source-silicon.slack.com/archives/C04MJUYP99V/p1711644686080599
-# From Tim Edwards:
-# - cthresh:    won't make the simulation faster, but 0.1 could avoid "trivially small parasitics"
-# - rthresh:    Never use. Generates lumped resistance and those are not handled by the tools.
-# - extresists: Produces parasitic resistance. 
-# - extresist tolerance: Might reduce parasitic resistance count, but should be set for each case.
-# - set SUB 0: Always use it when doing PEX extraction.
-#
-# Origintal tolerance set to "all"
-ifeq (,$(MAGIC_PEX_TOLERANCE))
-MAGIC_ROUTINE_PEX__TOLERANCE=10
-else
-MAGIC_ROUTINE_PEX__TOLERANCE=tolerance $(MAGIC_PEX_TOLERANCE)
-endif
-
+# ---------------------------------------------------------------------------- #
 define MAGIC_ROUTINE_PEX =
 drc off
 gds drccheck off
-set SUB 0
+$(MAGIC_ROUTINE__SET_SUB)
 $(MAGIC_ROUTINE_LOAD)
 
 flatten $(GDS_CELL)_pex
@@ -253,6 +282,7 @@ puts "Created pex file $(LAYOUT_NETLIST_PEX)"
 quit -noprompt
 endef
 
+# == Variables - Documentation == #
 
 define HELP_ENTRIES +=
 
