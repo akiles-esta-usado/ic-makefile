@@ -177,3 +177,5 @@ programs/*
 # **/*.dat
 
 **/PROBLEMS/
+**/gf180mcu_fd_io__*
+**/gf180mcu_fd_sc_mcu*

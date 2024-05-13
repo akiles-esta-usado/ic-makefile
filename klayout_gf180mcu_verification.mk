@@ -40,35 +40,22 @@ KLAYOUT_SCRIPT_LVS=$(PYTHON) $(KLAYOUT_HOME)/lvs/run_lvs.py \
 
 # Using schematic simplify and combine seems to be required...
 # combine seems to be required at least on one case.
-KLAYOUT_SCRIPT_LVS+= \
-	--combine
-
-KLAYOUT_SCRIPT_LVS+= \
-	--schematic_simplify
+KLAYOUT_SCRIPT_LVS+= --combine
+KLAYOUT_SCRIPT_LVS+= --schematic_simplify
 
 # Hides vss vdd and internal net names. Not so useful
-# KLAYOUT_SCRIPT_LVS+= \
-# 	--no_net_names
+# KLAYOUT_SCRIPT_LVS+= --no_net_names
 
 # Not so useful
-# KLAYOUT_SCRIPT_LVS+= \
-# 	--spice_comments
+# KLAYOUT_SCRIPT_LVS+= --spice_comments
 
 # What does it do?
-# KLAYOUT_SCRIPT_LVS+= \
-# 	--scale
+# KLAYOUT_SCRIPT_LVS+= --scale
 
-KLAYOUT_SCRIPT_LVS+= \
-	--net_only
-
-KLAYOUT_SCRIPT_LVS+= \
-	--top_lvl_pins
-
-KLAYOUT_SCRIPT_LVS+= \
-	--purge
-
-KLAYOUT_SCRIPT_LVS+= \
-	--purge_nets
+KLAYOUT_SCRIPT_LVS+= --net_only
+KLAYOUT_SCRIPT_LVS+= --top_lvl_pins
+KLAYOUT_SCRIPT_LVS+= --purge
+KLAYOUT_SCRIPT_LVS+= --purge_nets
 
 .PHONY: klayout-lvs-only
 klayout-lvs-only: klayout-validation xschem-netlist-lvs-noprefix-fixed
@@ -199,13 +186,16 @@ klayout-drc-full: klayout-validation
 
 
 # TODO: Make this common to all pdks
-klayout-compare-magic-extraction: magic-lvs-extraction
+#klayout-compare-magic-extraction: magic-lvs-extraction
+klayout-compare-magic-extraction:
 	sed -i '/subckt/s/_clean//' $(LAYOUT_NETLIST_MAGIC)
 	sed -i '/nfet_03v3/s/^X/M/' $(LAYOUT_NETLIST_MAGIC)
 	sed -i '/pfet_03v3/s/^X/M/' $(LAYOUT_NETLIST_MAGIC)
 	sed -i '/ppolyf_u_1k/s/^X/R/' $(LAYOUT_NETLIST_MAGIC)
 	sed -i '/ppolyf_u/s/^X/R/' $(LAYOUT_NETLIST_MAGIC)
 	sed -i '/cap_mim_2f0_m4m5_noshield/s/^X/C/' $(LAYOUT_NETLIST_MAGIC)
+	sed -i '/ pnp_[[:digit:]p[:digit:]x[:digit:]p[:digit:]]/s/^X/Q/' $(LAYOUT_NETLIST_MAGIC)
+	sed -i '/ npn_[[:digit:]p[:digit:]x[:digit:]p[:digit:]]/s/^X/Q/' $(LAYOUT_NETLIST_MAGIC)
 
 	$(MAKE) \
 		SCH_NETLIST_NOPREFIX=$(LAYOUT_NETLIST_MAGIC) \

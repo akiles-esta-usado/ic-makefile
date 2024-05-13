@@ -43,7 +43,7 @@ endif
 # From Tim Edwards:
 # - cthresh:    won't make the simulation faster, but 0.1 could avoid "trivially small parasitics"
 # - rthresh:    Never use. Generates lumped resistance and those are not handled by the tools.
-# - extresists: Produces parasitic resistance.
+# - extresists: Produces parasitic resistance. 
 # - extresist tolerance: Might reduce parasitic resistance count, but should be set for each case.
 # - set SUB 0: Always use it when doing PEX extraction.
 #
@@ -73,15 +73,25 @@ endif
 
 # ---------------------------------------------------------------------------- #
 # Cells with _FLAT suffix got flattened
-define FLATGLOB +=
-
+define FLATGLOB =
 gds flatglob *_FLAT*
+
 endef
 
+# ---------------------------------------------------------------------------- #
+# Read flatglob file on the project
+ifneq (, $(wildcard flatglob.mk))
+include flatglob.mk
+endif
+
+# ---------------------------------------------------------------------------- #
+# Flatglob patterns
+_INSTANCE=\[$$\0-9\]*
 
 ifeq (sky130A,$(PDK)) # === SKY130 Specific configurations =====================
 
-define FLATGLOB =
+define FLATGLOB +=
+
 gds flatglob *sky130_fd_pr__*
 gds flatglob *res_poly*
 gds flatglob mim_cap*
@@ -95,59 +105,10 @@ endef
 
 else ifeq (gf180mcuD,$(PDK)) # === GF180 Specific configurations ===============
 
-define FLATGLOB =
+define FLATGLOB +=
 
-# Each pattern should be the most specific as posible
-# This can erase complete subcircuits if care is not taken
+# gds flatglob pmos*
 
-# Fet patterns
-gds flatglob pfet
-gds flatglob pfet$$\[0-9\]*
-gds flatglob nfet
-gds flatglob nfet$$\[0-9\]*
-
-# Passive Devices patterns
-gds flatglob ppolyf_u_high_Rs_resistor
-gds flatglob ppolyf_u_high_Rs_resistor$$\[\0-9\]*
-gds flatglob ppolyf_u_resistor
-gds flatglob ppolyf_u_resistor$$\[\0-9\]*
-
-gds flatglob cap_mim*
-gds flatglob cap_mim$$\[\0-9\]*
-
-gds flatglob \[np\]*_bjt*
-gds flatglob \[np\]*_\[_xp0-9\]*
-
-# Building Devices
-gds flatglob via*
-gds flatglob via-*
-gds flatglob via_*
-gds flatglob via_dev$$\[0-9\]*
-gds flatglob gf180mcu.via_stack
-gds flatglob res_dev
-gds flatglob res_dev$$\[0-9\]*
-# gds flatglob polyf_res_inst_d09b0e8d
-
-# IO Devices
-gds flatglob *_CDNS_*
-gds flatglob *comp018green_*
-gds flatglob *_metal_stack
-gds flatglob *GF_NI_*
-gds flatglob *_METAL_RAIL*
-gds flatglob moscap_corner*
-gds flatglob Bondpad_*
-gds flatglob pmos_6p0_esd*
-gds flatglob GR_NMOS*
-gds flatglob POLY_.*FILL*
-gds flatglob POLY_SUB_FILL*
-gds flatglob nmos_clamp_20_50_4*
-gds flatglob ESD_CLAMP_COR
-gds flatglob moscap_routing
-gds flatglob power_via_cor_*
-gds flatglob POWER_RAIL_COR*
-gds flatglob top_rout*
-
-# Life-savers: Test how to make this work
 # gds flatglob \[_a-zA-Z\]*$$\[0-9\]+
 # gds flatglob compass*
 # gds flatglob rectangle*
@@ -165,13 +126,91 @@ gds flatglob top_rout*
 # gds flatglob *pfet_*
 
 
-endef
+# Each pattern should be most specific as posible
+# This can erase complete subcircuits
 
-define MAGIC_ROUTINE_LOAD__READSPICE_ALWAYS =
-readspice $(PDK_ROOT)/$(PDK)/libs.ref/gf180mcu_fd_io/spice/gf180mcu_fd_io.spice
-endef
+# Fet patterns #################################################################
+gds flatglob pfet
+gds flatglob pfet\[$$0-9\]*
+gds flatglob pfet$(_INSTANCE)
 
-endif # === SKY130 Specific configurations =====================
+gds flatglob nfet
+gds flatglob nfet$(_INSTANCE)
+
+# Passive Devices patterns #####################################################
+gds flatglob ppolyf_u_high_Rs_resistor
+gds flatglob ppolyf_u_high_Rs_resistor$(_INSTANCE)
+
+gds flatglob ppolyf_u_resistor
+gds flatglob ppolyf_u_resistor$(_INSTANCE)
+
+gds flatglob res_dev
+# gds flatglob res_dev$$\[0-9\]*
+# gds flatglob res_dev$(_INSTANCE)
+
+gds flatglob cap_mim
+gds flatglob cap_mim$(_INSTANCE)
+
+gds flatglob \[np\]*_bjt*
+gds flatglob \[np\]*_\[_xp0-9\]*
+
+# Building Devices #############################################################
+# This cells doesn't generate new subckts, 
+gds flatglob via_dev
+gds flatglob via_dev$(_INSTANCE)
+# gds flatglob via_dev$$\[0-9\]*
+gds flatglob via-*
+
+# gds flatglob via_*
+# gds flatglob gf180mcu.via_stack
+
+# gds flatglob polyf_res_inst_d09b0e8d
+
+# IO Devices ###################################################################
+gds flatglob 3LM_METAL_RAIL
+gds flatglob 4LM_METAL_RAIL
+gds flatglob 5LM_METAL_RAIL
+gds flatglob 5LM_METAL_RAIL_PAD_60
+gds flatglob *_CDNS_*
+gds flatglob Bondpad_5LM
+gds flatglob GF_NI_*
+gds flatglob comp018green_*
+
+gds flatglob GR_NMOS
+gds flatglob GR_NMOS_4T
+gds flatglob PMOS_metal_stack
+gds flatglob PMOS_4T_metal_stack
+gds flatglob nmos_metal_stack
+gds flatglob nmos_4T_metal_stack
+gds flatglob pmos_6p0_esd
+gds flatglob pmos_6p0_esd_40
+gds flatglob power_via_cor_3
+gds flatglob power_via_cor_5
+gds flatglob top_route
+gds flatglob top_route_1
+gds flatglob top_routing
+
+gds flatglob ESD_CLAMP_COR
+gds flatglob POLY_FILL
+gds flatglob POLY_SUB_FILL
+gds flatglob POLY_SUB_FILL_1
+gds flatglob POLY_SUB_FILL_3
+gds flatglob POWER_RAIL_COR
+gds flatglob POWER_RAIL_COR_0
+gds flatglob POWER_RAIL_COR_1
+gds flatglob moscap_corner
+gds flatglob moscap_corner_1
+gds flatglob moscap_corner_2
+gds flatglob moscap_corner_3
+gds flatglob moscap_routing
+
+gds flatglob nmos_clamp_20_50_4
+gds flatglob nmos_clamp_20_50_4_DVDD
+gds flatglob nmos_clamp_20_50_4_DVSS
+
+endef
+endif
+
 
 # == Variables - Magic routine definitions == #
 
@@ -180,21 +219,21 @@ endif # === SKY130 Specific configurations =====================
 define MAGIC_ROUTINE_LOAD =
 gds ordering on
 gds flatten yes
-gds noduplicates true
+# gds noduplicates true
 drc euclidean on
 
 $(FLATGLOB)
 
-if {"$(PDK)" == "sky130A"} {
-	gds read $(PDK_ROOT)/$(PDK)/libs.ref/sky130_fd_sc_hd/gds/sky130_fd_sc_hd.gds
-} elseif {"$(PDK)" == "gf180mcuD"} {
-	gds read $(PDK_ROOT)/$(PDK)/libs.ref/gf180mcu_fd_io/gds/gf180mcu_ef_io.gds
-	gds read $(PDK_ROOT)/$(PDK)/libs.ref/gf180mcu_fd_io/gds/gf180mcu_fd_io.gds
-}
+# if {"$(PDK)" == "sky130A"} {
+# 	gds read $(PDK_ROOT)/$(PDK)/libs.ref/sky130_fd_sc_hd/gds/sky130_fd_sc_hd.gds
+# } elseif {"$(PDK)" == "gf180mcuD"} {
+# 	gds read $(PDK_ROOT)/$(PDK)/libs.ref/gf180mcu_fd_io/gds/gf180mcu_ef_io.gds
+# 	gds read $(PDK_ROOT)/$(PDK)/libs.ref/gf180mcu_fd_io/gds/gf180mcu_fd_io.gds
+# }
 
 gds read $(GDS)
-load $(TOP)
-select cell $(TOP)
+load $(GDS_CELL)
+select cell $(GDS_CELL)
 select top cell
 
 $(MAGIC_ROUTINE_LOAD__READSPICE_ALWAYS)
@@ -203,8 +242,8 @@ if {[file exists $(SCH_NETLIST_NOPREFIX)]} {
 	readspice $(SCH_NETLIST_NOPREFIX)
 }
 
-load $(TOP)
-select cell $(TOP)
+load $(GDS_CELL)
+select cell $(GDS_CELL)
 select top cell
 expand
 
@@ -212,8 +251,8 @@ if {[file exists "$(LEF)"]} {
 	lef read $(LEF)
 }
 
-load $(TOP)
-select cell $(TOP)
+load $(GDS_CELL)
+select cell $(GDS_CELL)
 select top cell
 expand
 
@@ -223,6 +262,7 @@ endef
 # ---------------------------------------------------------------------------- #
 define MAGIC_ROUTINE_DRC =
 $(MAGIC_ROUTINE_LOAD)
+drc euclidean on
 drc style drc(full)
 drc check
 
@@ -259,7 +299,7 @@ endef
 define MAGIC_ROUTINE_PEX =
 drc off
 gds drccheck off
-$(MAGIC_ROUTINE__SET_SUB)
+set SUB 0
 $(MAGIC_ROUTINE_LOAD)
 
 flatten $(GDS_CELL)_pex
@@ -386,3 +426,9 @@ magic-generate-gds-from-mag:
 		gds write $(MODULE_DIR)/layout/$(TOP).gds
 		puts "Stored gds $(MODULE_DIR)/layout/$(TOP).gds"
 	EOF
+
+
+.PHONY: subckt-count
+subckt-count:
+	@grep -c ".subckt" $(LAYOUT_NETLIST_MAGIC) || true
+	@echo $(LAYOUT_NETLIST_MAGIC)

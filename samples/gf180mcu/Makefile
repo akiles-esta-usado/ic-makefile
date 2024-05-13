@@ -294,6 +294,7 @@ create-module:
 	$(MAKE) create-schematic
 	$(MAKE) create-layout
 
+# == VALIDATE SAMPLE DRC EVALUATION ========================================== #
 
 .PHONY: validate-sample-klayout-drc-deep
 validate-sample-klayout-drc-deep:
@@ -321,32 +322,6 @@ validate-sample-klayout-drc-flat:
 	make TOP=resistor_ppolyf_u_1k  DRC_FLAT=Y klayout-drc # Density/3
 
 
-.PHONY: validate-sample-klayout-lvs-deep
-validate-sample-klayout-lvs-deep:
-	make TOP=bjt                   GND_NAME=C   LVS_FLAT=N klayout-lvs-only # ?  Netlist don't match (C == S)
-	make TOP=bjt_fast              GND_NAME=vss LVS_FLAT=N klayout-lvs-only # Netlist match
-	make TOP=mim_capacitor                      LVS_FLAT=N klayout-lvs-only # Netlist match
-	make TOP=inv_sample            GND_NAME=vss LVS_FLAT=N klayout-lvs-only # Netlist match
-	make TOP=nmos5f                GND_NAME=S   LVS_FLAT=N klayout-lvs-only # Netlist match
-	make TOP=pmos1f                GND_NAME=D   LVS_FLAT=N klayout-lvs-only # Netlist match
-	make TOP=pmos5f                GND_NAME=D   LVS_FLAT=N klayout-lvs-only # Netlist match
-	make TOP=resistor_core         GND_NAME=B   LVS_FLAT=N klayout-lvs-only # Netlist match
-	make TOP=resistor_ppolyf_u_1k  GND_NAME=B   LVS_FLAT=N klayout-lvs-only # Netlist match
-
-
-.PHONY: validate-sample-klayout-lvs-flat
-validate-sample-klayout-lvs-flat:
-	make TOP=bjt                   GND_NAME=C   LVS_FLAT=Y klayout-lvs-only # Netlist don't match (C == S)
-	make TOP=bjt_fast              GND_NAME=C   LVS_FLAT=Y klayout-lvs-only # Netlist match
-	make TOP=mim_capacitor                      LVS_FLAT=Y klayout-lvs-only # Netlist match
-	make TOP=inv_sample            GND_NAME=vss LVS_FLAT=Y klayout-lvs-only # Netlist match
-	make TOP=nmos5f                GND_NAME=S   LVS_FLAT=Y klayout-lvs-only # Netlist match
-	make TOP=pmos1f                GND_NAME=D   LVS_FLAT=Y klayout-lvs-only # Netlist match
-	make TOP=pmos5f                GND_NAME=D   LVS_FLAT=Y klayout-lvs-only # Netlist match
-	make TOP=resistor_core         GND_NAME=B   LVS_FLAT=Y klayout-lvs-only # Netlist match
-	make TOP=resistor_ppolyf_u_1k  GND_NAME=B   LVS_FLAT=Y klayout-lvs-only # Netlist match
-
-
 .PHONY: validate-sample-magic-drc
 validate-sample-magic-drc:
 	# Evaluate magic drc on drc manager
@@ -361,32 +336,77 @@ validate-sample-magic-drc:
 	make TOP=resistor_ppolyf_u_1k   magic # 2: (PRES/LRES/HRES.7)
 
 
-.PHONY: validate-sample-magic-lvs
-validate-sample-magic-lvs:
+# == VALIDATE SAMPLE EXTRACTION ============================================== #
+
+.PHONY: validate-sample-klayout-lvs-deep
+validate-sample-klayout-lvs-deep:
+	make TOP=bjt                   GND_NAME=C   LVS_FLAT=N klayout-lvs-only # ?  Netlist don't match (C == S)
+	make TOP=bjt_fast              GND_NAME=vss LVS_FLAT=N klayout-lvs-only # Netlist match
+	make TOP=mim_capacitor                      LVS_FLAT=N klayout-lvs-only # Netlist match
+	make TOP=resistor_core         GND_NAME=B   LVS_FLAT=N klayout-lvs-only # Netlist match
+	make TOP=resistor_ppolyf_u_1k  GND_NAME=B   LVS_FLAT=N klayout-lvs-only # Netlist match
+	make TOP=inv_sample            GND_NAME=vss LVS_FLAT=N klayout-lvs-only # Netlist match
+	make TOP=nmos5f                GND_NAME=S   LVS_FLAT=N klayout-lvs-only # Netlist match
+	make TOP=pmos1f                GND_NAME=D   LVS_FLAT=N klayout-lvs-only # Netlist match
+	make TOP=pmos5f                GND_NAME=D   LVS_FLAT=N klayout-lvs-only # Netlist match
+
+
+.PHONY: validate-sample-klayout-lvs-flat
+validate-sample-klayout-lvs-flat:
+	make TOP=bjt                   GND_NAME=C   LVS_FLAT=Y klayout-lvs-only # Netlist don't match (C == S)
+	make TOP=bjt_fast              GND_NAME=C   LVS_FLAT=Y klayout-lvs-only # Netlist match
+	make TOP=mim_capacitor                      LVS_FLAT=Y klayout-lvs-only # Netlist match
+	make TOP=resistor_core         GND_NAME=B   LVS_FLAT=Y klayout-lvs-only # Netlist match
+	make TOP=resistor_ppolyf_u_1k  GND_NAME=B   LVS_FLAT=Y klayout-lvs-only # Netlist match
+	make TOP=inv_sample            GND_NAME=vss LVS_FLAT=Y klayout-lvs-only # Netlist match
+	make TOP=nmos5f                GND_NAME=S   LVS_FLAT=Y klayout-lvs-only # Netlist match
+	make TOP=pmos1f                GND_NAME=D   LVS_FLAT=Y klayout-lvs-only # Netlist match
+	make TOP=pmos5f                GND_NAME=D   LVS_FLAT=Y klayout-lvs-only # Netlist match
+
+
+.PHONY: evaluate-magic-extraction-samples
+evaluate-magic-extraction-samples:
 	# Magic Validation
-	make TOP=bjt           			magic-lvs-extraction # ? Works
+	make TOP=bjt                   magic-lvs-extraction subckt-count # 1
+	make TOP=bjt_fast              magic-lvs-extraction subckt-count # 1
+	make TOP=mim_capacitor         magic-lvs-extraction subckt-count # 1
+	make TOP=resistor_core         magic-lvs-extraction subckt-count # 1
+	make TOP=resistor_ppolyf_u_1k  magic-lvs-extraction subckt-count # 1
+	make TOP=inv_sample            magic-lvs-extraction subckt-count # 1
+	make TOP=nmos5f                magic-lvs-extraction subckt-count # 1
+	make TOP=pmos1f                magic-lvs-extraction subckt-count # 1
+	make TOP=pmos5f                magic-lvs-extraction subckt-count # 1
+	make TOP=ota                   magic-lvs-extraction subckt-count # 1
+
+	# On BJT
 	## - Ports "S" and "C" are electrically shorted.
 	## - Warning:  Ports "S" and "C" are electrically shorted.
 	## - Device has multiple lengths:  scaling all widths to length 444
-	make TOP=bjt_fast      			magic-lvs-extraction # ? Works
-	## - Warning:  Ports "C" and "S" are electrically shorted.
-	make TOP=mim_capacitor 			magic-lvs-extraction # ? Works
-	make TOP=inv_sample    			magic-lvs-extraction # ? Works
-	make TOP=nmos5f        			magic-lvs-extraction # ? Works
-	make TOP=pmos1f        			magic-lvs-extraction # ? Works
-	make TOP=pmos5f        			magic-lvs-extraction # ? Works
-	make TOP=resistor_core 			magic-lvs-extraction # ? Works
-	make TOP=resistor_ppolyf_u_1k   magic-lvs-extraction # ? Works
 
-	make TOP=bjt           			netgen-lvs-magic GND_NAME=vss # ? Top level cell failed pin matching
-	make TOP=bjt_fast      			netgen-lvs-magic GND_NAME=vss # ? Top level cell failed pin matching.
-	make TOP=mim_capacitor 			netgen-lvs-magic GND_NAME=vss # ? Circuits match uniquely.
-	make TOP=inv_sample    			netgen-lvs-magic GND_NAME=vss # ? Circuits match uniquely.
-	make TOP=nmos5f        			netgen-lvs-magic GND_NAME=vss # ? Circuits match uniquely.
-	make TOP=pmos1f        			netgen-lvs-magic GND_NAME=vss # ? Circuits match uniquely.
-	make TOP=pmos5f        			netgen-lvs-magic GND_NAME=vss # ? Circuits match uniquely.
-	make TOP=resistor_core 			netgen-lvs-magic GND_NAME=vss # ? Circuits match uniquely.
-	make TOP=resistor_ppolyf_u_1k   netgen-lvs-magic GND_NAME=vss # ? Circuits match uniquely.
+	# On BJT-FAST
+	## - Warning:  Ports "C" and "S" are electrically shorted.
+
+	make TOP=bjt           			netgen-lvs-script GND_NAME=vss # ? Top level cell failed pin matching
+	make TOP=bjt_fast      			netgen-lvs-script GND_NAME=S   # ? Top level cell failed pin matching.
+	make TOP=mim_capacitor 			netgen-lvs-script GND_NAME=vss # Circuits match uniquely.
+	make TOP=resistor_core 			netgen-lvs-script GND_NAME=vss # Circuits match uniquely.
+	make TOP=resistor_ppolyf_u_1k   netgen-lvs-script GND_NAME=B   # Circuits match uniquely.
+	make TOP=inv_sample    			netgen-lvs-script GND_NAME=vss # Circuits match uniquely.
+	make TOP=nmos5f        			netgen-lvs-script GND_NAME=vss # Circuits match uniquely.
+	make TOP=pmos1f        			netgen-lvs-script GND_NAME=vss # Circuits match uniquely.
+	make TOP=pmos5f        			netgen-lvs-script GND_NAME=vss # Circuits match uniquely.
+	make TOP=ota         			netgen-lvs-script GND_NAME=vss # Circuits match uniquely.
+
+	make TOP=bjt                   GND_NAME=S   klayout-compare-magic-extraction # Extractions are too different
+	make TOP=bjt_fast              GND_NAME=C   klayout-compare-magic-extraction # PNP is inverted
+	make TOP=mim_capacitor         GND_NAME=vss klayout-compare-magic-extraction # Congratulations! Netlists match.
+	make TOP=resistor_core         GND_NAME=vss klayout-compare-magic-extraction # Congratulations! Netlists match.
+	make TOP=resistor_ppolyf_u_1k  GND_NAME=vss klayout-compare-magic-extraction # Congratulations! Netlists match.
+	make TOP=inv_sample            GND_NAME=vss klayout-compare-magic-extraction # Congratulations! Netlists match.
+	make TOP=nmos5f                GND_NAME=S   klayout-compare-magic-extraction # Congratulations! Netlists match.
+	make TOP=pmos1f                GND_NAME=vss klayout-compare-magic-extraction # Congratulations! Netlists match.
+	make TOP=pmos5f                GND_NAME=vss klayout-compare-magic-extraction # Congratulations! Netlists match.
+	make TOP=ota                   GND_NAME=vss klayout-compare-magic-extraction # Congratulations! Netlists match.
 
 .PHONY: validate-sample-magic-klayout-compatibility
 validate-sample-magic-klayout-compatibility:
@@ -403,13 +423,142 @@ validate-sample-magic-klayout-compatibility:
 	# PROBLEM: It seems that klayout and magic uses different order on mimcap pads.
 	# If I invert IN1 and IN2, lvs works only for one (netgen magic, netgen klayout)
 
-compare-klayout-magic-netlists:
-	make TOP=bjt           			GND_NAME=vss LVS_FLAT=Y klayout-compare-magic # ? Don't match
-	make TOP=bjt_fast               GND_NAME=vss LVS_FLAT=Y klayout-compare-magic # ? Don't match
-	make TOP=inv_sample    			GND_NAME=vss LVS_FLAT=Y klayout-compare-magic # ? Match
-	make TOP=mim_capacitor 			GND_NAME=vss LVS_FLAT=Y klayout-compare-magic # ? Match
-	make TOP=nmos5f        			GND_NAME=S   LVS_FLAT=Y klayout-compare-magic # ? Don't match
-	make TOP=pmos5f        			GND_NAME=S   LVS_FLAT=Y klayout-compare-magic # ? Don't match
-	make TOP=pmos1f        			GND_NAME=vss LVS_FLAT=Y klayout-compare-magic # ? Match
-	make TOP=resistor_core 			GND_NAME=vss LVS_FLAT=Y klayout-compare-magic # ? Match
-	make TOP=resistor_ppolyf_u_1k   GND_NAME=vss LVS_FLAT=Y klayout-compare-magic # ? Match
+
+# == STANDARD CELL EXTRACTION ANALYSIS ======================================= #
+
+PDK_SC_GDS=$(wildcard $(PDK_ROOT)/$(PDK)/libs.ref/gf180mcu_fd_sc_mcu7t5v0/gds/gf180mcu_fd_sc_mcu7t5v0.gds)
+PDK_SC_SPICE=$(wildcard $(PDK_ROOT)/$(PDK)/libs.ref/gf180mcu_fd_sc_mcu7t5v0/spice/gf180mcu_fd_sc_mcu7t5v0.spice)
+
+
+gf180mcu-sc-klayout:
+	make GDS=$(PDK_SC_GDS) klayout
+
+
+gf180mcu-extract-sc:
+	make GDS=$(PDK_SC_GDS) GDS_DIR=. klayout-extract-topcells
+	rm -rf ./\(UNNAMED\)/
+
+
+extract-sc-netlist:
+ifeq (,$(wildcard $(TOP)))
+	$(call ERROR_MESSAGE, TOP not defined)
+endif
+	mkdir -p $(TOP)/spice
+	cp $(PDK_SC_SPICE) $(TOP)/spice
+	make TOP=$(TOP) SCH_NETLIST_NOPREFIX=$(TOP)/spice/gf180mcu_fd_sc_mcu7t5v0.spice magic-lvs-extraction
+
+
+compare-sc-netlist:
+ifeq (,$(wildcard $(TOP)))
+	$(call ERROR_MESSAGE, TOP not defined)
+endif
+	netgen -batch lvs \
+		"$(TOP)/output/extraction/layout_clean/$(TOP)_clean.spice $(TOP)_clean" \
+		"$(TOP)/spice/gf180mcu_fd_sc_mcu7t5v0.spice $(TOP)" \
+		$(PDK_ROOT)/$(PDK)/libs.tech/netgen/setup.tcl \
+		$(TOP)/output/reports/netlist-extraction-comparison.rpt
+
+
+evaluate-extract-standard-cell-netlist:
+	make full-clean
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__addf_1            extract-sc-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__addf_2            extract-sc-netlist subckt-count #
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__addf_4            extract-sc-netlist subckt-count # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__addh_1            extract-sc-netlist subckt-count # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__addh_2            extract-sc-netlist subckt-count # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__addh_4            extract-sc-netlist subckt-count # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and2_1            extract-sc-netlist subckt-count # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and2_2            extract-sc-netlist subckt-count # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and2_4            extract-sc-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and3_1            extract-sc-netlist subckt-count # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and3_2            extract-sc-netlist subckt-count # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and3_4            extract-sc-netlist subckt-count # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and4_1            extract-sc-netlist subckt-count # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and4_2            extract-sc-netlist subckt-count # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and4_4            extract-sc-netlist subckt-count # 1
+
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__addf_1            compare-sc-netlist # Circuits match uniquely.
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__addf_2            compare-sc-netlist # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__addf_4            compare-sc-netlist # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__addh_1            compare-sc-netlist # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__addh_2            compare-sc-netlist # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__addh_4            compare-sc-netlist # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and2_1            compare-sc-netlist # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and2_2            compare-sc-netlist # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and2_4            compare-sc-netlist # Circuits match uniquely.
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and3_1            compare-sc-netlist # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and3_2            compare-sc-netlist # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and3_4            compare-sc-netlist # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and4_1            compare-sc-netlist # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and4_2            compare-sc-netlist # 
+	make TOP=gf180mcu_fd_sc_mcu7t5v0__and4_4            compare-sc-netlist # Circuits match uniquely.
+
+
+# == INPUT/OUTPUT PAD EXTRACTION ANALYSIS ==================================== #
+
+PDK_IO_GDS=$(wildcard $(PDK_ROOT)/$(PDK)/libs.ref/gf180mcu_fd_io/gds/gf180mcu_fd_io.gds)
+PDK_IO_SPICE=$(wildcard $(PDK_ROOT)/$(PDK)/libs.ref/gf180mcu_fd_io/spice/gf180mcu_fd_io.spice)
+
+gf180mcu-io-klayout:
+	make GDS=$(PDK_IO_GDS) klayout
+
+
+gf180mcu-extract-io:
+	make GDS=$(PDK_IO_GDS) GDS_DIR=. klayout-extract-topcells
+	rm -rf ./\(UNNAMED\)/
+
+
+# Comparing magic extracted netlist with the expected spice.
+extract-pad-netlist:
+ifeq (,$(wildcard $(TOP)))
+	$(call ERROR_MESSAGE, TOP not defined)
+endif
+	mkdir -p $(TOP)/spice
+	cp $(PDK_IO_SPICE) $(TOP)/spice
+	make TOP=$(TOP) SCH_NETLIST_NOPREFIX=$(TOP)/spice/gf180mcu_fd_io.spice magic-lvs-extraction
+
+
+compare-pad-netlist:
+ifeq (,$(wildcard $(TOP)))
+	$(call ERROR_MESSAGE, TOP not defined)
+endif
+	netgen -batch lvs \
+		"$(TOP)/output/extraction/layout_clean/$(TOP)_clean.spice $(TOP)_clean" \
+		"$(TOP)/spice/gf180mcu_fd_io.spice $(TOP)" \
+		$(PDK_ROOT)/$(PDK)/libs.tech/netgen/setup.tcl \
+		$(TOP)/output/reports/netlist-extraction-comparison.rpt
+
+
+evaluate-extract-pad-netlist:
+	make full-clean
+	make TOP=gf180mcu_fd_io__asig_5p0   extract-pad-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_io__bi_24t     extract-pad-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_io__bi_t       extract-pad-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_io__brk2       extract-pad-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_io__brk5       extract-pad-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_io__cor        extract-pad-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_io__dvdd       extract-pad-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_io__dvss       extract-pad-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_io__fill1      extract-pad-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_io__fill5      extract-pad-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_io__fill10     extract-pad-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_io__fillnc     extract-pad-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_io__in_c       extract-pad-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_io__in_s       extract-pad-netlist subckt-count # 1
+
+	make TOP=gf180mcu_fd_io__asig_5p0   compare-pad-netlist # Circuits match uniquely.
+	make TOP=gf180mcu_fd_io__bi_24t     compare-pad-netlist # Circuits match uniquely. Property errors were found.
+	make TOP=gf180mcu_fd_io__bi_t       compare-pad-netlist # Circuits match uniquely. Property errors were found.
+	make TOP=gf180mcu_fd_io__brk2       compare-pad-netlist # No devices
+	make TOP=gf180mcu_fd_io__brk5       compare-pad-netlist # No devices
+	make TOP=gf180mcu_fd_io__cor        compare-pad-netlist # Circuits match uniquely.
+	make TOP=gf180mcu_fd_io__dvdd       compare-pad-netlist # Circuits match uniquely.
+	make TOP=gf180mcu_fd_io__dvss       compare-pad-netlist # Circuits match uniquely.
+	make TOP=gf180mcu_fd_io__fill1      compare-pad-netlist # No devices
+	make TOP=gf180mcu_fd_io__fill5      compare-pad-netlist # Circuits match uniquely.
+	make TOP=gf180mcu_fd_io__fill10     compare-pad-netlist # Circuits match uniquely.
+	make TOP=gf180mcu_fd_io__fillnc     compare-pad-netlist # No devices
+	make TOP=gf180mcu_fd_io__in_c       compare-pad-netlist # Circuits match uniquely. Property errors were found.
+	make TOP=gf180mcu_fd_io__in_s       compare-pad-netlist # Circuits match uniquely. Property errors were found.
+
+

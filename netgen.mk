@@ -16,7 +16,7 @@
 # Files, directories and Aliases
 ################################
 
-LOG_NETGEN=$(LOG_DIR)/$(TIMESTAMP_TIME)_netgen_$(TOP).log
+LOG_NETGEN=$(LOG_DIR)/$(TIMESTAMP_TIME)_netgen_$(GDS_CELL).log
 
 NETGEN=netgen -batch lvs
 
@@ -34,6 +34,10 @@ NETGEN_LVS_WITH_KLAYOUT=$(NETGEN) \
 	"$(SCH_NETLIST_NOPREFIX) $(GDS_CELL)" \
 	$(NETGEN_RCFILE) \
 	$(NETGEN_LVS_REPORT_KLAYOUT)
+
+# ---------------------------------------------------------------------------- #
+NETGEN_LAYOUT_CELL:=$(GDS_CELL)_clean
+NETGEN_SCHEMATIC_CELL:=$(GDS_CELL)
 
 
 ifeq (sky130A,$(PDK)) # === SKY130 Specific configurations =====================
@@ -64,8 +68,8 @@ set layout \[readnet spice $(LAYOUT_NETLIST_MAGIC)\]
 $(NETGEN_ROUTINE_LVS__DEPENDENCIES)
 readnet spice $(SCH_NETLIST_PREFIX) $$source
 lvs \
-	"$$layout $(TOP)_clean" \
-	"$$source $(TOP)" \
+	"$$layout $(NETGEN_LAYOUT_CELL)" \
+	"$$source $(NETGEN_SCHEMATIC_CELL)" \
 	$(PDK_ROOT)/$(PDK)/libs.tech/netgen/$(PDK)_setup.tcl \
 	$(NETGEN_LVS_REPORT_MAGIC)
 endef
@@ -144,8 +148,6 @@ endif
 	@echo Greping relevant results:
 	grep "Netlist" $(NETGEN_LVS_REPORT_KLAYOUT)
 
-NETGEN_LAYOUT_CELL:=$(TOP)_clean
-NETGEN_SCHEMATIC_CELL:=$(TOP)
 
 .PHONY: netgen-lvs-script
 netgen-lvs-script: netgen-validation xschem-netlist-lvs-prefix magic-lvs-extraction
