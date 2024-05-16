@@ -36,7 +36,10 @@ NETGEN_LVS_WITH_KLAYOUT=$(NETGEN) \
 	$(NETGEN_LVS_REPORT_KLAYOUT)
 
 # ---------------------------------------------------------------------------- #
+NETGEN_LAYOUT_SPICE=$(LAYOUT_NETLIST_MAGIC)
 NETGEN_LAYOUT_CELL:=$(GDS_CELL)_clean
+
+NETGEN_SCHEMATIC_SPICE=$(SCH_NETLIST_PREFIX)
 NETGEN_SCHEMATIC_CELL:=$(GDS_CELL)
 
 
@@ -155,11 +158,11 @@ netgen-lvs-script: netgen-validation xschem-netlist-lvs-prefix magic-lvs-extract
 	set rcfile $(NETGEN_RCFILE)
 	set reports $(NETGEN_LVS_REPORT_MAGIC)
 
-	set layout_spice $(LAYOUT_NETLIST_MAGIC)
-	set layout_cell $(NETGEN_LAYOUT_CELL)
+	set layout_spice $(NETGEN_LAYOUT_SPICE)
+	set layout_cell  $(NETGEN_LAYOUT_CELL)
 
-	set schematic_spice $(SCH_NETLIST_PREFIX)
-	set schematic_cell $(NETGEN_SCHEMATIC_CELL)
+	set schematic_spice $(NETGEN_SCHEMATIC_SPICE)
+	set schematic_cell  $(NETGEN_SCHEMATIC_CELL)
 
 	$(NETGEN_ROUTINE_LVS__DEPENDENCIES)
 

@@ -178,8 +178,15 @@ CLEANABLE:= \
 	$(foreach module,$(MODULES),$(wildcard $(module)/layout/*.sim)) \
 	$(foreach module,$(MODULES),$(wildcard $(module)/layout/*.nodes))
 
-FULL_CLEANABLE:= $(CLEANABLE) \
+FULL_CLEANABLE:= \
 	$(foreach module,$(MODULES),$(wildcard $(module)/output))
+
+PDK_CLEANABLE:= \
+	$(wildcard gf180mcu_fd_io__*) \
+	$(wildcard gf180mcu_fd_sc_mcu7t5v0__*) \
+
+clean-pdk:
+	rm -rf $(PDK_CLEANABLE)
 
 # Logs
 
@@ -538,7 +545,7 @@ evaluate-extract-pad-netlist:
 	make TOP=gf180mcu_fd_io__brk5       extract-pad-netlist subckt-count # 1
 	make TOP=gf180mcu_fd_io__cor        extract-pad-netlist subckt-count # 1
 	make TOP=gf180mcu_fd_io__dvdd       extract-pad-netlist subckt-count # 1
-	make TOP=gf180mcu_fd_io__dvss       extract-pad-netlist subckt-count # 1
+	make TOP=gf180mcu_fd_io__dvss       extract-pad-netlist subckt-count # 1	
 	make TOP=gf180mcu_fd_io__fill1      extract-pad-netlist subckt-count # 1
 	make TOP=gf180mcu_fd_io__fill5      extract-pad-netlist subckt-count # 1
 	make TOP=gf180mcu_fd_io__fill10     extract-pad-netlist subckt-count # 1
